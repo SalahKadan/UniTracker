@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniSchedule — Smart University Scheduling</title>
+  <meta name="description" content="Build your perfect university schedule. Multi-university academic scheduling platform with course management and approval workflows.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ==================== TOP NAVBAR ==================== -->
+  <nav id="navbar-landing" class="navbar-landing">
+    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniSchedule</div>
+    <div class="nav-links-landing">
+      <a href="#features">Features</a>
+      <a href="#universities">Universities</a>
+      <button class="btn-primary btn-glow" onclick="showView('auth')">Get Started</button>
+    </div>
+  </nav>
+
+  <nav id="navbar" class="hidden">
+    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniSchedule</div>
+    <div class="nav-center" id="nav-uni-name"></div>
+    <div class="nav-links">
+      <span id="nav-user-name"></span>
+      <button id="btn-logout" class="btn-outline">Logout</button>
+    </div>
+  </nav>
+
+  <main id="app">
+
+    <!-- ==================== LANDING PAGE ==================== -->
+    <section id="view-welcome" class="view active">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-bg-glow"></div>
+        <div class="hero-orb orb-1"></div>
+        <div class="hero-orb orb-2"></div>
+        <div class="hero-orb orb-3"></div>
+        
+        <div class="hero-container">
+          <div class="hero-content">
+            <span class="hero-badge">🎓 Built for modern students</span>
+            <h1>Organize your week<br>with <span class="gradient-text">UniSchedule</span></h1>
+            <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple universities, and create the perfect balance between studies and your personal life.</p>
+            <div class="hero-actions">
+              <button class="btn-primary btn-lg btn-glow" onclick="showView('auth')">Get Started for Free</button>
+              <button class="btn-outline btn-lg" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
+            </div>
+            <div class="hero-stats">
+              <div class="hero-stat"><strong>10k+</strong><span>Students</span></div>
+              <div class="hero-stat"><strong>4</strong><span>Universities</span></div>
+              <div class="hero-stat"><strong>100%</strong><span>Free</span></div>
+            </div>
+          </div>
+          
+          <div class="hero-visual">
+            <div class="mockup-window">
+              <div class="mockup-header">
+                <div class="mockup-dots"><span></span><span></span><span></span></div>
+                <div class="mockup-title">student@university.ac.il</div>
+              </div>
+              <div class="mockup-body">
+                <div class="mockup-sidebar">
+                  <div class="mockup-line w-long"></div>
+                  <div class="mockup-card"></div>
+                  <div class="mockup-card"></div>
+                  <div class="mockup-card"></div>
+                </div>
+                <div class="mockup-grid">
+                  <div class="mockup-event bg-blue floating" style="animation-delay: 0s; grid-area: 2/2/4/3;">CS101</div>
+                  <div class="mockup-event bg-purple floating" style="animation-delay: 0.5s; grid-area: 3/4/6/5;">MATH</div>
+                  <div class="mockup-event bg-green floating" style="animation-delay: 1s; grid-area: 1/3/3/4;">Gym</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="section" id="features">
+        <h2 class="section-title">Why UniSchedule?</h2>
+        <p class="section-subtitle">Everything you need to plan your academic week, in one seamless platform.</p>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">📅</div>
+            <h3>Visual Timetable</h3>
+            <p>See your entire week at a glance with an interactive drag-and-drop schedule grid.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Smart Search</h3>
+            <p>Find courses instantly by name, code, lecturer, or department across your university catalog.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Unified Creation</h3>
+            <p>Directly create and add courses to the global catalog and your schedule without waiting for admin approval.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3>Customizable</h3>
+            <p>Add personal events, change colors, and customize your schedule to match your style.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🏫</div>
+            <h3>Multi-University</h3>
+            <p>Supporting Hebrew University, Tel Aviv University, Ben-Gurion University, and University of Haifa.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💎</div>
+            <h3>Premium Design</h3>
+            <p>Enjoy a beautiful, responsive dark-mode interface built to keep you focused and organized.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Universities -->
+      <div class="section section-dark" id="universities">
+        <h2 class="section-title">Supported Universities</h2>
+        <p class="section-subtitle">Select your university when you sign up and get instant access to your course catalog.</p>
+        <div class="uni-grid" id="uni-showcase">
+          <div class="uni-showcase-card">
+            <div class="uni-logo">🏛️</div>
+            <h3>Hebrew University of Jerusalem</h3>
+            <p>Est. 1918 — Israel's premier research university</p>
+          </div>
+          <div class="uni-showcase-card">
+            <div class="uni-logo">🏛️</div>
+            <h3>Tel Aviv University</h3>
+            <p>Israel's largest university — Innovation hub</p>
+          </div>
+          <div class="uni-showcase-card">
+            <div class="uni-logo">🏛️</div>
+            <h3>Ben-Gurion University of the Negev</h3>
+            <p>Pioneering research in the heart of the Negev</p>
+          </div>
+          <div class="uni-showcase-card">
+            <div class="uni-logo">🏛️</div>
+            <h3>University of Haifa</h3>
+            <p>Northern Israel's leading academic institution</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="section cta-section">
+        <h2>Ready to plan your semester?</h2>
+        <p>Join students across Israel who are already using UniSchedule.</p>
+        <button class="btn-primary btn-lg btn-glow" onclick="showView('auth')">Get Started — It's Free</button>
+      </div>
+
+      <!-- Footer -->
+      <footer class="landing-footer">
+        <p>© 2026 UniSchedule. Built for students, by students.</p>
+      </footer>
+    </section>
+
+    <!-- ==================== AUTH PAGE ==================== -->
+    <section id="view-auth" class="view hidden">
+      <div class="auth-page">
+        <button class="btn-text" onclick="showView('welcome')" style="margin-bottom:1rem;">← Back to Home</button>
+        <div class="auth-container card">
+          <div class="auth-header">
+            <h2 id="auth-title">Login</h2>
+            <p id="auth-desc" class="text-muted">Welcome back! Enter your credentials to continue.</p>
+          </div>
+          <form id="auth-form">
+            <!-- Signup-only fields -->
+            <div id="signup-fields" class="hidden">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="auth-firstname">First Name</label>
+                  <input type="text" id="auth-firstname" placeholder="John">
+                </div>
+                <div class="form-group">
+                  <label for="auth-lastname">Last Name</label>
+                  <input type="text" id="auth-lastname" placeholder="Doe">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="auth-email">Email Address</label>
+                <input type="email" id="auth-email" placeholder="you@university.ac.il">
+              </div>
+              <div class="form-group">
+                <label for="auth-studentid">Student ID</label>
+                <input type="text" id="auth-studentid" placeholder="e.g. 123456789">
+              </div>
+              <div class="form-group">
+                <label for="auth-university">University</label>
+                <select id="auth-university">
+                  <option value="" disabled selected>Choose your university...</option>
+                  <option value="huji">Hebrew University of Jerusalem</option>
+                  <option value="tau">Tel Aviv University</option>
+                  <option value="bgu">Ben-Gurion University of the Negev</option>
+                  <option value="haifa">University of Haifa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="auth-faculty">Faculty / Department</label>
+                <input type="text" id="auth-faculty" placeholder="e.g. Computer Science">
+              </div>
+            </div>
+
+            <!-- Always-visible fields -->
+            <div class="form-group">
+              <label for="auth-username">Username</label>
+              <input type="text" id="auth-username" required placeholder="Choose a username">
+            </div>
+            <div class="form-group">
+              <label for="auth-password">Password</label>
+              <input type="password" id="auth-password" required placeholder="Enter your password">
+            </div>
+
+            <!-- Login-only: university selector -->
+            <div id="login-uni-field" class="form-group">
+              <label for="login-university">University</label>
+              <select id="login-university">
+                <option value="huji">Hebrew University of Jerusalem</option>
+                <option value="tau">Tel Aviv University</option>
+                <option value="bgu">Ben-Gurion University of the Negev</option>
+                <option value="haifa">University of Haifa</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn-primary btn-glow" id="btn-auth-submit" style="width:100%; padding:0.8rem; font-size:1rem; font-weight:600; margin-top:0.5rem;">Login</button>
+          </form>
+          <p class="auth-toggle">
+            <span id="auth-toggle-text">Don't have an account?</span>
+            <button id="btn-toggle-auth" class="btn-text">Sign Up</button>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== STUDENT DASHBOARD ==================== -->
+    <section id="view-student" class="view hidden">
+      <div class="dashboard-layout">
+        <aside class="sidebar">
+          <h3>My Courses</h3>
+          <div class="search-box" style="position:relative;">
+            <input type="text" id="course-search" placeholder="Search to add courses..." autocomplete="off">
+            <div id="search-results-dropdown" class="card hidden" style="position:absolute; top:100%; left:0; width:100%; margin-top:0.25rem; z-index:100; max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding:0.5rem;"></div>
+          </div>
+          <div id="public-courses-list" class="courses-list mt-1"></div>
+          <button id="btn-open-request-modal" class="btn-secondary mt-1">Create New Custom Course</button>
+          <button id="btn-open-custom-modal" class="btn-primary mt-1">Add Personal Event</button>
+        </aside>
+        <div class="main-content">
+          <div class="timetable-header">
+            <h2>My Weekly Schedule</h2>
+          </div>
+          <div class="timetable-grid" id="student-timetable"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- Create Course Modal -->
+  <div id="modal-request" class="modal hidden">
+    <div class="modal-content card">
+      <span class="close-modal" id="close-request-modal">&times;</span>
+      <h2>Create New Course</h2>
+      <form id="form-request-course">
+        <div class="form-grid">
+          <div class="form-group"><label>Course Name</label><input type="text" id="req-name" required></div>
+          <div class="form-group"><label>Course Code</label><input type="text" id="req-code" required></div>
+          <div class="form-group"><label>Faculty / Department</label><input type="text" id="req-faculty" required></div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="req-type">
+              <option value="lecture">Lecture</option>
+              <option value="tutorial">Tutorial</option>
+              <option value="lab">Lab</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Lecturer</label><input type="text" id="req-lecturer" required></div>
+          <div class="form-group"><label>Room</label><input type="text" id="req-room" required></div>
+          <div class="form-group">
+            <label>Day</label>
+            <select id="req-day">
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Start Time</label><input type="time" id="req-start" required></div>
+          <div class="form-group"><label>End Time</label><input type="time" id="req-end" required></div>
+          <div class="form-group"><label>Group Number</label><input type="text" id="req-group"></div>
+          <div class="form-group"><label>Credits</label><input type="number" id="req-credits" min="0" max="20" placeholder="e.g. 3"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Notes (optional)</label><textarea id="req-notes" rows="2"></textarea></div>
+        </div>
+        <button type="submit" class="btn-primary mt-1" style="width: 100%;">Create Course</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Custom Event Modal -->
+  <div id="modal-custom" class="modal hidden">
+    <div class="modal-content card">
+      <span class="close-modal" id="close-custom-modal">&times;</span>
+      <h2>Add Custom Event</h2>
+      <form id="form-custom-event">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: span 2;"><label>Event Title</label><input type="text" id="cust-title" placeholder="e.g. Gym, Study Session" required></div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label>Day</label>
+            <select id="cust-day">
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Start Time</label><input type="time" id="cust-start" required></div>
+          <div class="form-group"><label>End Time</label><input type="time" id="cust-end" required></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Location / Details</label><input type="text" id="cust-notes"></div>
+        </div>
+        <button type="submit" class="btn-primary mt-1" style="width: 100%;">Add Event</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Event Modal -->
+  <div id="modal-edit" class="modal hidden">
+    <div class="modal-content card">
+      <span class="close-modal" id="close-edit-modal">&times;</span>
+      <h2 id="edit-title">Edit Event</h2>
+      <form id="form-edit-event">
+        <input type="hidden" id="edit-id">
+        <input type="hidden" id="edit-is-custom">
+        <div class="form-grid" id="edit-form-grid">
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="edit-color" style="height: 40px; padding: 2px; cursor: pointer; width:100%;">
+          </div>
+          <div class="form-group">
+            <label>Day</label>
+            <select id="edit-day">
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Start Time</label><input type="time" id="edit-start" required></div>
+          <div class="form-group"><label>End Time</label><input type="time" id="edit-end" required></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Location / Room</label><input type="text" id="edit-room"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Details / Notes</label><input type="text" id="edit-notes"></div>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn-primary" style="flex: 1;">Save Changes</button>
+          <button type="button" class="btn-danger" id="btn-delete-event" style="flex: 1; border: none; border-radius: var(--radius); font-weight: 600;">Remove</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Course Info Modal -->
+  <div id="modal-course-info" class="modal hidden">
+    <div class="modal-content card" style="max-width:400px;">
+      <span class="close-modal" id="close-info-modal">&times;</span>
+      <h2 id="info-title" style="margin-bottom:0.25rem;">Course Name</h2>
+      <p id="info-code" style="color:var(--primary); font-weight:600; margin-bottom:1rem;">CODE101</p>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; font-size:0.9rem;">
+        <div><strong>Faculty:</strong><br><span id="info-faculty" style="color:var(--text-muted);">---</span></div>
+        <div><strong>Credits:</strong><br><span id="info-credits" style="color:var(--text-muted);">---</span></div>
+      </div>
+      
+      <div style="background:var(--surface-2); padding:1rem; border-radius:var(--radius); margin-bottom:1rem;">
+        <h4 style="margin-bottom:0.5rem; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">Active Sections</h4>
+        <div id="info-sections-list" style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem;"></div>
+      </div>
+      <button id="btn-delete-course-global" class="btn-danger" style="width:100%; border:none; padding:0.75rem; border-radius:var(--radius); font-weight:600; font-size:0.9rem;">Delete Course from Global Catalog</button>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
