@@ -249,12 +249,86 @@ function setupEventListeners() {
     if (confirm(`Are you sure you want to permanently delete ${code} and all its sections from the global catalog?`)) {
       if (window.api.deleteCourseGlobal(code, state.currentUniId)) {
         document.getElementById('modal-course-info').classList.add('hidden');
-        if (state.previewCourseCode === code) state.previewCourseCode = null;
         renderStudentDashboard();
       } else {
         alert("Deletion failed or course was not found globally.");
       }
     }
+  });
+
+  document.getElementById('btn-remove-course-schedule').addEventListener('click', (e) => {
+    const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+    const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+    sections.forEach(s => window.api.removeFromSchedule(state.currentUser.id, s.id));
+    document.getElementById('modal-course-info').classList.add('hidden');
+    renderStudentDashboard();
+  });
+
+  document.getElementById('btn-save-links').addEventListener('click', (e) => {
+    const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+    const linksData = {
+      wa: document.getElementById('info-link-wa').value.trim(),
+      rec: document.getElementById('info-link-rec').value.trim(),
+      exams: document.getElementById('info-link-exams').value.trim()
+    };
+    window.api.saveCourseLinks(state.currentUniId, code, linksData);
+    
+    // Add visual feedback
+    const btn = document.getElementById('btn-save-links');
+    const ogText = btn.textContent;
+    btn.textContent = 'Saved!';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => {
+      btn.textContent = ogText;
+      btn.style.background = '';
+    }, 2000);
+  });
+
+  // Add listeners for Description & Reviews
+  document.getElementById('btn-edit-description').addEventListener('click', () => {
+    document.getElementById('info-description').classList.add('hidden');
+    document.getElementById('info-description-input').classList.remove('hidden');
+    document.getElementById('btn-save-description').classList.remove('hidden');
+    document.getElementById('btn-edit-description').classList.add('hidden');
+  });
+
+  document.getElementById('btn-save-description').addEventListener('click', (e) => {
+    const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+    const newDesc = document.getElementById('info-description-input').value.trim();
+    window.api.saveCourseDescription(state.currentUniId, code, newDesc);
+    
+    document.getElementById('info-description').textContent = newDesc || 'No description available.';
+    document.getElementById('info-description').classList.remove('hidden');
+    document.getElementById('info-description-input').classList.add('hidden');
+    document.getElementById('btn-save-description').classList.add('hidden');
+    document.getElementById('btn-edit-description').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-write-review').addEventListener('click', () => {
+    document.getElementById('review-form-container').classList.remove('hidden');
+    document.getElementById('review-text').value = '';
+    document.getElementById('review-rating').value = '5';
+  });
+
+  document.getElementById('btn-cancel-review').addEventListener('click', () => {
+    document.getElementById('review-form-container').classList.add('hidden');
+  });
+
+  document.getElementById('btn-submit-review').addEventListener('click', (e) => {
+    const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+    const rating = document.getElementById('review-rating').value;
+    const text = document.getElementById('review-text').value.trim();
+    if (!text) { alert('Please write a feedback message.'); return; }
+    
+    window.api.addCourseFeedback(state.currentUniId, code, {
+      userId: state.currentUser.id,
+      username: state.currentUser.username,
+      rating: parseInt(rating),
+      text
+    });
+    
+    document.getElementById('review-form-container').classList.add('hidden');
+    renderCourseFeedbacks(code);
   });
 
   // Search Auto-Complete
@@ -300,7 +374,8 @@ function handleSearchAutocomplete(query) {
       el.addEventListener('mouseover', () => el.style.background = 'var(--surface-2)');
       el.addEventListener('mouseout', () => el.style.background = 'transparent');
       el.addEventListener('click', (ev) => {
-        state.previewCourseCode = ev.currentTarget.dataset.code;
+        const code = ev.currentTarget.dataset.code || ev.currentTarget.getAttribute('data-code');
+        state.previewCourseCode = code;
         document.getElementById('course-search').value = '';
         dropdown.classList.add('hidden');
         renderStudentDashboard();
@@ -352,33 +427,12 @@ function renderPublicCourses() {
 
   let html = '';
   Object.values(grouped).forEach(group => {
-    const isPreviewing = state.previewCourseCode === group.code;
-    const addedSections = group.sections;
-    
-    let borderStyle = isPreviewing ? 'border-color:var(--primary); box-shadow:0 0 0 2px var(--primary);' : '';
-    if (addedSections.length > 0 && !isPreviewing) borderStyle = 'border-color:var(--surface-border); border-left: 3px solid var(--primary);';
-
     html += `
-      <div class="course-card" style="${borderStyle} position:relative;">
-        <button class="btn-info-icon" data-code="${group.code}" style="position:absolute; top:8px; right:8px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--text-muted); font-size:0.75rem;">i</button>
-        <h4 style="padding-right:20px;">${group.name}</h4>
-        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">
+      <div class="course-card" style="position:relative;">
+        <button class="btn-info-icon" data-code="${group.code}" style="position:absolute; top:8px; right:8px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; z-index:2; transition:all 0.2s;">i</button>
+        <h4 style="padding-right:20px; position:relative; z-index:1;">${group.name}</h4>
+        <div class="course-meta" style="position:relative; z-index:1; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem; font-weight:500;">
           ${group.code}  ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
-        </div>
-        
-        <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.4rem;">
-          ${addedSections.map(s => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-color); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem;">
-              <span>${s.type} | Group ${s.group || '—'}</span>
-              <button class="btn-text btn-remove-course" data-id="${s.id}" style="color:var(--danger); padding:0;">Remove</button>
-            </div>
-          `).join('')}
-          <div style="margin-top:0.25rem;">
-            ${isPreviewing
-              ? `<button class="btn-outline btn-close-preview" style="font-size:0.8rem; width:100%;">Close Preview</button>`
-              : `<button class="btn-text btn-preview-course" data-code="${group.code}" style="font-size:0.75rem; padding:0; text-align:left; color:var(--primary-hover);">+ Add another section (Grid Preview)</button>`
-            }
-          </div>
         </div>
       </div>
     `;
@@ -386,31 +440,14 @@ function renderPublicCourses() {
 
   container.innerHTML = html;
 
-  // Remove individual section
-  container.querySelectorAll('.btn-remove-course').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      window.api.removeFromSchedule(state.currentUser.id, e.currentTarget.dataset.id);
-      renderStudentDashboard();
-    });
-  });
-  // Open Preview
-  container.querySelectorAll('.btn-preview-course').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      state.previewCourseCode = e.currentTarget.dataset.code;
-      renderStudentDashboard();
-    });
-  });
-  // Close Preview
-  container.querySelectorAll('.btn-close-preview').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.previewCourseCode = null;
-      renderStudentDashboard();
-    });
-  });
   // Open Info
   container.querySelectorAll('.btn-info-icon').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      openCourseInfo(e.currentTarget.dataset.code);
+      const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+      // If clicking info, also bring back preview mode so they can see and select sections!
+      state.previewCourseCode = code;
+      openCourseInfo(code);
+      renderStudentDashboard();
     });
   });
 }
@@ -426,20 +463,31 @@ function openCourseInfo(code) {
   document.getElementById('info-faculty').textContent = sample.faculty || '—';
   document.getElementById('info-credits').textContent = sample.credits || '—';
   
-  const sectionsList = document.getElementById('info-sections-list');
-  sectionsList.innerHTML = sections.map(s => `
-    <div style="border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:0.5rem; display:flex; justify-content:space-between;">
-      <div>
-        <span style="font-weight:600; color:var(--text-light);">${s.type} (Group ${s.group || '—'})</span><br>
-        <span style="color:var(--text-muted);">${s.lecturer}</span>
-      </div>
-      <div style="text-align:right;">
-        <span style="color:var(--primary-hover);">${s.day} ${s.start}-${s.end}</span><br>
-        <span style="color:var(--text-muted);">${s.room}</span>
-      </div>
-    </div>
-  `).join('');
+  const details = window.api.getCourseDetails(state.currentUniId, code);
+  const desc = details.description || sample.description || `${sample.name} is a comprehensive course covering the foundational and advanced concepts required for mastering this discipline within the ${sample.faculty} department.`;
   
+  document.getElementById('info-description').textContent = desc;
+  document.getElementById('info-description-input').value = desc;
+  
+  document.getElementById('btn-save-description').dataset.code = code;
+  document.getElementById('btn-submit-review').dataset.code = code;
+  
+  // reset UI states
+  document.getElementById('info-description').classList.remove('hidden');
+  document.getElementById('info-description-input').classList.add('hidden');
+  document.getElementById('btn-save-description').classList.add('hidden');
+  document.getElementById('btn-edit-description').classList.remove('hidden');
+  document.getElementById('review-form-container').classList.add('hidden');
+
+  renderCourseFeedbacks(code);
+
+  const links = window.api.getCourseLinks(state.currentUniId, code);
+  document.getElementById('info-link-wa').value = links.wa || '';
+  document.getElementById('info-link-rec').value = links.rec || '';
+  document.getElementById('info-link-exams').value = links.exams || '';
+  document.getElementById('btn-save-links').dataset.code = code;
+  
+  document.getElementById('btn-remove-course-schedule').dataset.code = code;
   document.getElementById('btn-delete-course-global').dataset.code = code;
   document.getElementById('modal-course-info').classList.remove('hidden');
 }
@@ -550,6 +598,19 @@ function clearSelectionHighlight() {
   document.querySelectorAll('.sel-active').forEach(c => c.classList.remove('sel-active'));
 }
 
+const courseColors = [
+  '#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', 
+  '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', 
+  '#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316'
+];
+
+function getCourseColorStr(code) {
+  if (!code) return '#3b82f6';
+  let hash = 0;
+  for(let i=0; i<code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  return courseColors[Math.abs(hash) % courseColors.length];
+}
+
 function buildBlock(item, isCustom, isPreview = false) {
   const pref = window.api.getEventPreference(state.currentUser.id, item.id);
   const day = pref.day || item.day;
@@ -566,7 +627,8 @@ function buildBlock(item, isCustom, isPreview = false) {
   const col = DAY_COL[day];
   if (!col || rowStart < 2) return '';
 
-  const bgColor = pref.color || (isCustom ? (item.color || '#10b981') : '#3b82f6');
+  const baseColor = isCustom ? (item.color || '#10b981') : getCourseColorStr(item.code);
+  const bgColor = pref.color || baseColor;
   const safeId = item.id.replace(/'/g, "\\'");
 
   const clickAction = isPreview ? `handlePreviewSelect('${safeId}')` : `openEditModalGlobal('${safeId}', ${isCustom})`;
@@ -586,9 +648,10 @@ function buildBlock(item, isCustom, isPreview = false) {
       border-radius:6px; font-size:0.78rem; overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:5;">
     ${badgeHTML}
-    <strong>${item.name}</strong><br>
-    ${startStr} - ${endStr}<br>
-    <span style="opacity:0.85">${bottomText}</span>
+    ${!isCustom ? `<div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-bottom:2px;">${item.code}</div>` : ''}
+    <div style="font-weight:600; line-height:1.2; margin-bottom:2px;">${item.name || item.title}</div>
+    ${!isCustom ? `<div style="font-size:0.75rem; margin-top:2px; opacity:0.9;">${item.type} ${item.group || ''}</div>` : ''}
+    <div style="font-size:0.75rem; margin-top:4px; opacity:0.8;">${bottomText}</div>
   </div>`;
 }
 
@@ -685,6 +748,16 @@ function handleSaveEdit() {
     window.api.updateCustomEvent(id, { color, day, start, end, room, notes });
   } else {
     window.api.saveEventPreference(state.currentUser.id, id, { color, day, start, end, room, notes });
+    
+    // Syndicate color to ALL sections of the same course
+    const ev = window.api.getPublicCourses(state.currentUniId).find(c => c.id === id);
+    if (ev && ev.code) {
+      const peers = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === ev.code && c.id !== id);
+      peers.forEach(peer => {
+        const peerPref = window.api.getEventPreference(state.currentUser.id, peer.id) || {};
+        window.api.saveEventPreference(state.currentUser.id, peer.id, { ...peerPref, color });
+      });
+    }
   }
   document.getElementById('modal-edit').classList.add('hidden');
   renderTimetable();
@@ -739,6 +812,55 @@ function submitCourseRequest() {
   document.getElementById('modal-request').classList.add('hidden');
   renderStudentDashboard();
 }
+
+function renderCourseFeedbacks(code) {
+  const details = window.api.getCourseDetails(state.currentUniId, code);
+  const feedbacks = details.feedbacks || [];
+  
+  let avgRating = 0;
+  if (feedbacks.length > 0) {
+    avgRating = feedbacks.reduce((sum, f) => sum + parseInt(f.rating), 0) / feedbacks.length;
+  }
+  
+  const rounded = Math.round(avgRating);
+  const starsStr = feedbacks.length > 0 ? ('★'.repeat(rounded) + '☆'.repeat(5 - rounded)) : '☆☆☆☆☆';
+  
+  document.getElementById('info-rating').textContent = starsStr;
+  document.getElementById('info-feedback-count').textContent = `${feedbacks.length} Reviews`;
+  
+  const listEl = document.getElementById('info-feedbacks-list');
+  if (feedbacks.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">Be the first to review this course!</p>';
+    return;
+  }
+  
+  listEl.innerHTML = feedbacks.map(f => `
+    <div style="background:var(--bg-color); border:1px solid var(--border); padding:0.75rem; border-radius:6px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+        <strong style="font-size:0.85rem; color:var(--text-light);">${f.username || 'Student'}</strong>
+        <span style="color:var(--warning); font-size:0.8rem;">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span>
+      </div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">${f.text}</p>
+      <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.4rem; opacity:0.6;">${new Date(f.date).toLocaleDateString()}</div>
+    </div>
+  `).join('');
+}
+
+// Global click listener to clear preview if clicking outside search or timetable blocks
+document.addEventListener('click', (e) => {
+  if (state.previewCourseCode && !e.target.closest('.course-block') && !e.target.closest('.search-box') && !e.target.closest('.btn-info-icon')) {
+    state.previewCourseCode = null;
+    renderStudentDashboard();
+  }
+});
+
+// Escape key to clear preview
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.previewCourseCode) {
+    state.previewCourseCode = null;
+    renderStudentDashboard();
+  }
+});
 
 // ==================== START ====================
 document.addEventListener('DOMContentLoaded', init);

@@ -209,6 +209,56 @@ class DataStore {
     if (!this.db.preferences || !this.db.preferences[userId]) return {};
     return this.db.preferences[userId][eventId] || {};
   }
+
+  // --- Course Links API ---
+  saveCourseLinks(uniId, courseCode, linksData) {
+    if (!this.db.courseLinks) this.db.courseLinks = {};
+    if (!this.db.courseLinks[uniId]) this.db.courseLinks[uniId] = {};
+    const existing = this.db.courseLinks[uniId][courseCode] || {};
+    this.db.courseLinks[uniId][courseCode] = { ...existing, ...linksData };
+    this.saveData();
+  }
+
+  getCourseLinks(uniId, courseCode) {
+    if (!this.db.courseLinks || !this.db.courseLinks[uniId]) return {};
+    return this.db.courseLinks[uniId][courseCode] || {};
+  }
+
+  // --- Course Details (Description & Feedback) API ---
+  getCourseDetails(uniId, courseCode) {
+    if (!this.db.courseDetails) this.db.courseDetails = {};
+    if (!this.db.courseDetails[uniId]) this.db.courseDetails[uniId] = {};
+    const details = this.db.courseDetails[uniId][courseCode] || {};
+    return {
+      description: details.description || '',
+      feedbacks: details.feedbacks || []
+    };
+  }
+
+  saveCourseDescription(uniId, courseCode, description) {
+    if (!this.db.courseDetails) this.db.courseDetails = {};
+    if (!this.db.courseDetails[uniId]) this.db.courseDetails[uniId] = {};
+    const existing = this.db.courseDetails[uniId][courseCode] || {};
+    this.db.courseDetails[uniId][courseCode] = { ...existing, description };
+    this.saveData();
+  }
+
+  addCourseFeedback(uniId, courseCode, feedbackData) {
+    if (!this.db.courseDetails) this.db.courseDetails = {};
+    if (!this.db.courseDetails[uniId]) this.db.courseDetails[uniId] = {};
+    const existing = this.db.courseDetails[uniId][courseCode] || { feedbacks: [] };
+    if (!existing.feedbacks) existing.feedbacks = [];
+    
+    const existingIdx = existing.feedbacks.findIndex(f => f.userId === feedbackData.userId);
+    if (existingIdx !== -1) {
+      existing.feedbacks[existingIdx] = { ...existing.feedbacks[existingIdx], ...feedbackData, date: new Date().toISOString() };
+    } else {
+      existing.feedbacks.unshift({ ...feedbackData, date: new Date().toISOString() });
+    }
+    
+    this.db.courseDetails[uniId][courseCode] = existing;
+    this.saveData();
+  }
 }
 
 window.api = new DataStore();

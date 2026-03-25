@@ -369,21 +369,97 @@
 
   <!-- Course Info Modal -->
   <div id="modal-course-info" class="modal hidden">
-    <div class="modal-content card" style="max-width:400px;">
+    <div class="modal-content card" style="max-width:450px;">
       <span class="close-modal" id="close-info-modal">&times;</span>
       <h2 id="info-title" style="margin-bottom:0.25rem;">Course Name</h2>
       <p id="info-code" style="color:var(--primary); font-weight:600; margin-bottom:1rem;">CODE101</p>
       
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; font-size:0.9rem;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; font-size:0.9rem;">
         <div><strong>Faculty:</strong><br><span id="info-faculty" style="color:var(--text-muted);">---</span></div>
         <div><strong>Credits:</strong><br><span id="info-credits" style="color:var(--text-muted);">---</span></div>
       </div>
-      
-      <div style="background:var(--surface-2); padding:1rem; border-radius:var(--radius); margin-bottom:1rem;">
-        <h4 style="margin-bottom:0.5rem; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">Active Sections</h4>
-        <div id="info-sections-list" style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem;"></div>
+
+      <!-- Description -->
+      <div style="margin-bottom:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Description</h4>
+          <button id="btn-edit-description" class="btn-text" style="font-size:0.75rem; padding:0;">Edit</button>
+        </div>
+        <p id="info-description" style="font-size:0.85rem; color:var(--text-muted); background:var(--surface-2); padding:0.75rem; border-radius:8px; margin:0;">No description available.</p>
+        <textarea id="info-description-input" class="hidden" style="width:100%; border-radius:8px; padding:0.75rem; font-size:0.85rem; background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); min-height:80px; margin-bottom:0.5rem;"></textarea>
+        <button id="btn-save-description" class="btn-secondary hidden" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Save Description</button>
       </div>
-      <button id="btn-delete-course-global" class="btn-danger" style="width:100%; border:none; padding:0.75rem; border-radius:var(--radius); font-weight:600; font-size:0.9rem;">Delete Course from Global Catalog</button>
+      
+      <!-- Student Rating Header -->
+      <div style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:0.75rem; border-radius:8px;">
+        <div>
+          <h4 style="font-size:0.9rem; color:var(--text-light); margin-bottom:0.2rem;">Student Rating</h4>
+          <span style="font-size:0.8rem; color:var(--text-muted);" id="info-feedback-count">0 Reviews</span>
+        </div>
+        <div style="color:var(--warning); font-size:1.2rem; letter-spacing:2px;" id="info-rating">
+          ☆☆☆☆☆
+        </div>
+      </div>
+
+      <!-- Feedbacks & Reviews -->
+      <div style="margin-bottom:1.5rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem; align-items:center;">
+          <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Reviews</h4>
+          <button id="btn-write-review" class="btn-primary" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Write a Review</button>
+        </div>
+        
+        <div id="review-form-container" class="hidden" style="background:var(--surface-2); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border);">
+          <div style="margin-bottom:0.5rem;">
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your Rating (1-5 Stars)</label>
+            <select id="review-rating" style="width:100%; padding:0.4rem; background:var(--bg-color); color:var(--text-main); border:1px solid var(--border); border-radius:6px;">
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Fair</option>
+              <option value="1">1 - Poor</option>
+            </select>
+          </div>
+          <div style="margin-bottom:0.5rem;">
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your Feedback</label>
+            <textarea id="review-text" placeholder="Share your experience with this course..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem; min-height:60px;"></textarea>
+          </div>
+          <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem;">
+            <button id="btn-cancel-review" type="button" class="btn-text" style="font-size:0.75rem;">Cancel</button>
+            <button id="btn-submit-review" type="button" class="btn-success" style="font-size:0.8rem; padding:0.4rem 1rem;">Post Review</button>
+          </div>
+        </div>
+
+        <!-- List of existing reviews -->
+        <div id="info-feedbacks-list" style="display:flex; flex-direction:column; gap:0.75rem; max-height:200px; overflow-y:auto; padding-right:0.5rem;">
+          <!-- Reviews will be injected here -->
+        </div>
+      </div>
+
+      <!-- Links Section -->
+      <div style="margin-bottom:1.5rem;">
+        <h4 style="margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-light);">Useful Links</h4>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <div class="link-editor">
+            <label style="font-size:0.8rem; color:var(--text-muted);">WhatsApp Group</label>
+            <input type="text" id="info-link-wa" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+          </div>
+          <div class="link-editor">
+            <label style="font-size:0.8rem; color:var(--text-muted);">Recorded Materials (חומר מוקלט)</label>
+            <input type="text" id="info-link-rec" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+          </div>
+          <div class="link-editor">
+            <label style="font-size:0.8rem; color:var(--text-muted);">Past Exams</label>
+            <input type="text" id="info-link-exams" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+          </div>
+          <button id="btn-save-links" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save Links</button>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div style="display:flex; gap:1rem;">
+        <button id="btn-remove-course-schedule" class="btn-outline" style="flex:1; border-color:var(--danger); color:var(--danger); font-size:0.85rem;">Remove from Schedule</button>
+        <button id="btn-delete-course-global" class="btn-danger" style="flex:1; font-size:0.85rem; padding: 0.5rem;">Delete from Catalog</button>
+      </div>
     </div>
   </div>
 

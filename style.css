@@ -437,13 +437,27 @@ nav:not(.navbar-landing) {
 .search-box input:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.2); outline: none; border-color: var(--primary); }
 .courses-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem; }
 .course-card {
-  background: var(--bg-color);
-  border: 1px solid var(--border);
-  padding: 1rem;
-  border-radius: var(--radius);
-  transition: border-color 0.3s, box-shadow 0.3s;
+  background: linear-gradient(145deg, rgba(30, 41, 65, 0.7), rgba(19, 27, 46, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 1.2rem;
+  border-radius: 14px;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s;
+  overflow: hidden;
 }
-.course-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.course-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--primary);
+  border-radius: 4px 0 0 4px;
+}
+.course-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(59, 130, 246, 0.15);
+}
 .course-card h4 { font-size: 0.9rem; margin-bottom: 0.25rem; }
 .course-card p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem; }
 
