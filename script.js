@@ -102,7 +102,6 @@ function showView(viewId) {
     if (state.currentUser) {
       document.getElementById('nav-user-name').textContent = state.currentUser.username;
       document.getElementById('nav-uni-name').textContent = UNI_NAMES[state.currentUniId] || '';
-        UNI_NAMES[state.currentUniId] || '';
     }
   }
 
