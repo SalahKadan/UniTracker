@@ -266,8 +266,9 @@
             <div id="search-results-dropdown" class="card hidden" style="position:absolute; top:100%; left:0; width:100%; margin-top:0.25rem; z-index:100; max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding:0.5rem;"></div>
           </div>
           <div id="public-courses-list" class="courses-list mt-1"></div>
-          <button id="btn-open-request-modal" class="btn-secondary mt-1">Create New Custom Course</button>
+          <button id="btn-open-exam-schedule" class="btn-outline mt-1" style="border-color: var(--warning); color: var(--warning); width:100%;" onclick="openExamSchedule()">Exam Schedule (לוח מבחנים)</button>
           <button id="btn-open-custom-modal" class="btn-primary mt-1">Add Personal Event</button>
+          <button id="btn-open-request-modal" class="btn-secondary mt-1" style="margin-bottom:0.5rem;">Create New Custom Course</button>
         </aside>
         <div class="main-content">
           <div class="timetable-header">
@@ -395,6 +396,8 @@
           <div class="form-group"><label>End Time</label><input type="time" id="req-end" required></div>
           <div class="form-group"><label>Group Number</label><input type="text" id="req-group"></div>
           <div class="form-group"><label>Credits</label><input type="number" id="req-credits" min="0" max="20" placeholder="e.g. 3"></div>
+          <div class="form-group"><label>Moed A (optional)</label><input type="date" id="req-moeda"></div>
+          <div class="form-group"><label>Moed B (optional)</label><input type="date" id="req-moedb"></div>
           <div class="form-group" style="grid-column: span 2;"><label>Notes (optional)</label><textarea id="req-notes" rows="2"></textarea></div>
         </div>
         <button type="submit" class="btn-primary mt-1" style="width: 100%;">Create Course</button>
@@ -546,6 +549,22 @@
         </div>
       </div>
 
+      <!-- Exams Section (לוח מבחנים) -->
+      <div style="margin-bottom:1.5rem;">
+        <h4 style="margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-light);">Exams (לוח מבחנים)</h4>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <div class="link-editor">
+            <label style="font-size:0.8rem; color:var(--text-muted);">Moed A</label>
+            <input type="date" id="info-exam-moeda" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+          </div>
+          <div class="link-editor">
+            <label style="font-size:0.8rem; color:var(--text-muted);">Moed B</label>
+            <input type="date" id="info-exam-moedb" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+          </div>
+          <button id="btn-save-exams" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save Exams</button>
+        </div>
+      </div>
+
       <!-- Links Section -->
       <div style="margin-bottom:1.5rem;">
         <h4 style="margin-bottom:0.5rem; font-size:0.9rem; color:var(--text-light);">Useful Links</h4>
@@ -574,7 +593,18 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
-  <script src="script.js"></script>
+  <!-- Exam Schedule Modal -->
+  <div id="modal-exam-schedule" class="modal hidden">
+    <div class="modal-content card" style="max-width:800px; width: 95%;">
+      <span class="close-modal" id="close-exam-schedule-modal" onclick="document.getElementById('modal-exam-schedule').classList.add('hidden')">&times;</span>
+      <h2 style="margin-bottom:1rem;">Exam Schedule (לוח מבחנים)</h2>
+      <div id="exam-schedule-list" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; max-height:600px; overflow-y:auto; padding-right:0.5rem;">
+        <!-- Exams injected here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js?v=2"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>

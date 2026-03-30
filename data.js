@@ -325,6 +325,21 @@ class DataStore {
     return true;
   }
 
+  // --- Exams API ---
+  getCourseExams(uniId, courseCode) {
+    if (!this.db.courseExams) this.db.courseExams = {};
+    if (!this.db.courseExams[uniId]) this.db.courseExams[uniId] = {};
+    return this.db.courseExams[uniId][courseCode] || { moeda: '', moedb: '' };
+  }
+
+  saveCourseExams(uniId, courseCode, examsData) {
+    if (!this.db.courseExams) this.db.courseExams = {};
+    if (!this.db.courseExams[uniId]) this.db.courseExams[uniId] = {};
+    const existing = this.db.courseExams[uniId][courseCode] || {};
+    this.db.courseExams[uniId][courseCode] = { ...existing, ...examsData };
+    this.saveData();
+  }
+
   // --- Course Details (Description & Feedback) API ---
   getCourseDetails(uniId, courseCode) {
     if (!this.db.courseDetails) this.db.courseDetails = {};

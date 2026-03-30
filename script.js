@@ -369,6 +369,24 @@ function setupEventListeners() {
     }, 2000);
   });
 
+  document.getElementById('btn-save-exams').addEventListener('click', (e) => {
+    const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+    const examsData = {
+      moeda: document.getElementById('info-exam-moeda').value,
+      moedb: document.getElementById('info-exam-moedb').value
+    };
+    window.api.saveCourseExams(state.currentUniId, code, examsData);
+
+    const btn = document.getElementById('btn-save-exams');
+    const ogText = btn.textContent;
+    btn.textContent = 'Saved!';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => {
+      btn.textContent = ogText;
+      btn.style.background = '';
+    }, 2000);
+  });
+
   // Add listeners for Description & Reviews
   document.getElementById('btn-edit-description').addEventListener('click', () => {
     document.getElementById('info-description').classList.add('hidden');
@@ -545,12 +563,12 @@ function renderPublicCourses() {
   Object.values(grouped).forEach(group => {
     html += `
       <div class="course-card" style="position:relative;">
-        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:0.25rem; z-index:2;">
+        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:row; gap:0.25rem; z-index:2;">
+          ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
           <button class="btn-info-icon" title="Course Info" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; transition:all 0.2s;">i</button>
           <button class="btn-preview-icon" title="Reset & Pick Sessions" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.7rem; transition:all 0.2s;">👁</button>
-          ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
         </div>
-        <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:32px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
+        <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:84px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
         <div class="course-meta" style="position:relative; z-index:1; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem; font-weight:500;">
           ${group.code}  ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
         </div>
@@ -659,6 +677,11 @@ function openCourseInfo(code) {
   document.getElementById('info-link-rec').value = links.rec || '';
   document.getElementById('info-link-exams').value = links.exams || '';
   document.getElementById('btn-save-links').dataset.code = code;
+
+  const exams = window.api.getCourseExams(state.currentUniId, code);
+  document.getElementById('info-exam-moeda').value = exams.moeda || '';
+  document.getElementById('info-exam-moedb').value = exams.moedb || '';
+  document.getElementById('btn-save-exams').dataset.code = code;
 
   renderCourseSessions(code);
 
@@ -1243,13 +1266,100 @@ function submitCourseRequest() {
   };
 
   const newCourse = window.api.createCourse(courseData);
-  // Automatically add the newly created course section to the user's schedule
-  window.api.addToSchedule(state.currentUser.id, newCourse.id);
+
+  // Save exams data if provided
+  const moeda = document.getElementById('req-moeda').value;
+  const moedb = document.getElementById('req-moedb').value;
+  if (moeda || moedb) {
+    window.api.saveCourseExams(state.currentUniId, courseData.code, { moeda, moedb });
+  }
+
+  // Don't automatically add the newly created course section to the user's schedule.
+  // Instead, just make sure it's in the catalog so the user can 'pick' sessions via visibility mode.
+  // window.api.addToSchedule(state.currentUser.id, newCourse.id);
+
+  if (state.catalogCourseCodes && !state.catalogCourseCodes.includes(courseData.code)) {
+    state.catalogCourseCodes.push(courseData.code);
+    saveCatalogState();
+  }
 
   document.getElementById('form-request-course').reset();
   document.getElementById('modal-request').classList.add('hidden');
+
+  // Enter visibility mode for the new course immediately so they can pick sessions
+  if (!state.previewCourseCodes) state.previewCourseCodes = [];
+  if (!state.previewCourseCodes.includes(courseData.code)) state.previewCourseCodes.push(courseData.code);
+
   renderStudentDashboard();
 }
+
+// ==================== EXAM SCHEDULE ====================
+window.openExamSchedule = function () {
+  const container = document.getElementById('exam-schedule-list');
+  const allCourses = window.api.getPublicCourses(state.currentUniId);
+
+  const scheduleIds = window.api.getPersonalSchedule(state.currentUser.id);
+  // Get all session objects that are in the schedule
+  const scheduledSessions = allCourses.filter(c => scheduleIds.includes(c.id));
+
+  // HARD GUARD CLAUSE: If no specific sessions are picked onto the schedule table, there are strictly no exams.
+  if (scheduledSessions.length === 0) {
+    container.innerHTML = '<div style="grid-column: span 2; text-align: center;"><p style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No upcoming exams scheduled.<br>Add exams from the course settings.</p></div>';
+    document.getElementById('modal-exam-schedule').classList.remove('hidden');
+    return;
+  }
+
+  // Only show exams for courses that have at least one session added to the schedule
+  const myCodes = [...new Set(scheduledSessions.map(s => s.code))];
+
+  const examsList = [];
+
+  myCodes.forEach(code => {
+    const exams = window.api.getCourseExams(state.currentUniId, code);
+    const sample = scheduledSessions.find(s => s.code === code);
+    if (!sample) return; // Paranoia check
+
+    if (exams.moeda) examsList.push({ code, name: sample.name, type: 'Moed A', date: exams.moeda });
+    if (exams.moedb) examsList.push({ code, name: sample.name, type: 'Moed B', date: exams.moedb });
+  });
+
+  const moedAList = examsList.filter(ex => ex.type === 'Moed A').sort((a, b) => new Date(a.date) - new Date(b.date));
+  const moedBList = examsList.filter(ex => ex.type === 'Moed B').sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const renderExamCard = (ex) => {
+    const dateObj = new Date(ex.date);
+    const dateStr = dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    return `
+      <div style="background:var(--surface-2); border:1px solid var(--border); padding:0.75rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="color:var(--text-light); font-size:0.9rem;">${ex.name}</strong> <span style="font-size:0.75rem; color:var(--text-muted);">(${ex.code})</span>
+          <div style="font-size:0.8rem; color:var(--primary); font-weight:600; margin-top:0.25rem;">${ex.type}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:var(--text-light); font-size:0.85rem; font-weight:500;">${dateStr}</div>
+        </div>
+      </div>
+    `;
+  };
+
+  if (examsList.length === 0) {
+    container.innerHTML = '<div style="grid-column: span 2; text-align: center;"><p style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No upcoming exams scheduled.<br>Add exams from the course settings.</p></div>';
+  } else {
+    const colBHtml = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
+      <h3 style="color:var(--text-muted); font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">Moed B</h3>
+      ${moedBList.length > 0 ? moedBList.map(renderExamCard).join('') : '<p style="font-size:0.85rem; color:var(--text-muted);">No Moed B exams scheduled.</p>'}
+    </div>`;
+
+    const colAHtml = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
+      <h3 style="color:var(--text-muted); font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">Moed A</h3>
+      ${moedAList.length > 0 ? moedAList.map(renderExamCard).join('') : '<p style="font-size:0.85rem; color:var(--text-muted);">No Moed A exams scheduled.</p>'}
+    </div>`;
+
+    container.innerHTML = colBHtml + colAHtml;
+  }
+
+  document.getElementById('modal-exam-schedule').classList.remove('hidden');
+};
 
 function renderCourseFeedbacks(code) {
   const details = window.api.getCourseDetails(state.currentUniId, code);
