@@ -26,6 +26,8 @@
     <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniSchedule</div>
     <div class="nav-center" id="nav-uni-name"></div>
     <div class="nav-links">
+      <button class="btn-text" onclick="showView('student')">Schedule</button>
+      <button class="btn-text" onclick="showView('todo')">To-Do List</button>
       <span id="nav-user-name"></span>
       <button id="btn-logout" class="btn-outline">Logout</button>
     </div>
@@ -260,6 +262,86 @@
       </div>
     </section>
 
+    </section>
+
+    <!-- ==================== TO-DO LIST ==================== -->
+    <section id="view-todo" class="view hidden">
+      <div class="task-manager-layout">
+        <!-- Header -->
+        <div class="tm-header">
+          <div>
+            <h2>Task Manager</h2>
+            <div class="tm-stats" id="tm-stats">0 active · 0 completed</div>
+          </div>
+          <button id="btn-toggle-task-form" class="btn-primary" style="background:var(--primary); font-weight:600; border-radius:8px;">+ New Task</button>
+        </div>
+
+        <!-- Create Form (Inline) -->
+        <div id="tm-create-form-container" class="card tm-card hidden">
+          <h3 style="font-size:1.1rem; margin-bottom:1.5rem;">Create New Task</h3>
+          <form id="form-todo">
+            <div class="tm-form-grid">
+              <div class="form-group" style="grid-column: span 2;">
+                <label>Title</label>
+                <input type="text" id="todo-desc" required placeholder="e.g. Submit HW3">
+              </div>
+              <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" id="todo-date" required>
+              </div>
+              <div class="form-group">
+                <label>Priority</label>
+                <select id="todo-importance">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label>Course (optional)</label>
+                <input type="text" id="todo-course" placeholder="e.g. CS101">
+              </div>
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1rem;">
+              <button type="submit" class="btn-primary" style="background:var(--primary); font-weight:600; padding:0.6rem 1.5rem; border-radius:8px;">✓ Create</button>
+              <button type="button" id="btn-cancel-task" class="btn-secondary" style="background: rgba(255,255,255,0.05); padding:0.6rem 1.5rem; border-radius:8px;">✕ Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="tm-filters-bar">
+          <div class="tm-filters-left">
+            <span style="color:var(--text-muted); font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg> Filter:</span>
+            <select id="filter-status" class="tm-select">
+              <option value="all">All Status</option>
+              <option value="pending">Active</option>
+              <option value="done">Completed</option>
+            </select>
+            <select id="filter-priority" class="tm-select">
+              <option value="all">All Priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <input type="text" id="filter-course" class="tm-select" style="background-image:none; padding-right:1rem; cursor:text; width: 140px;" placeholder="Search Course...">
+          </div>
+          <div class="tm-filters-right">
+            <span style="color:var(--text-muted); font-size:0.9rem;">↑↓</span>
+            <select id="sort-by" class="tm-select">
+              <option value="date">Sort by Date</option>
+              <option value="priority">Sort by Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- List -->
+        <div class="todo-list card tm-card" id="todo-list-container" style="min-height:300px;">
+          <!-- Tasks dynamically generated here -->
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ==================== MODALS ==================== -->
@@ -303,6 +385,8 @@
       </form>
     </div>
   </div>
+
+  <!-- To-Do Modal removed to use inline form -->
 
   <!-- Add Custom Event Modal -->
   <div id="modal-custom" class="modal hidden">

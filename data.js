@@ -224,6 +224,43 @@ class DataStore {
     return this.db.courseLinks[uniId][courseCode] || {};
   }
 
+  // --- To-Do List API ---
+  addTodo(userId, todoData) {
+    if (!this.db.todos) this.db.todos = [];
+    const newTodo = {
+      id: `todo_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      userId,
+      status: 'pending',
+      ...todoData
+    };
+    this.db.todos.push(newTodo);
+    this.saveData();
+    return newTodo;
+  }
+
+  getTodos(userId) {
+    if (!this.db.todos) return [];
+    return this.db.todos.filter(t => t.userId === userId);
+  }
+
+  updateTodoStatus(todoId, status) {
+    if (!this.db.todos) return false;
+    const todo = this.db.todos.find(t => t.id === todoId);
+    if (todo) {
+      todo.status = status;
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
+  removeTodo(todoId) {
+    if (!this.db.todos) return false;
+    this.db.todos = this.db.todos.filter(t => t.id !== todoId);
+    this.saveData();
+    return true;
+  }
+
   // --- Course Details (Description & Feedback) API ---
   getCourseDetails(uniId, courseCode) {
     if (!this.db.courseDetails) this.db.courseDetails = {};

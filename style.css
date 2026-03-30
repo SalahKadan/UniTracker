@@ -416,6 +416,50 @@ nav:not(.navbar-landing) {
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .auth-toggle { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
 
+/* ==================== TO-DO LIST (TASK MANAGER) ==================== */
+.task-manager-layout { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; }
+.tm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.tm-header h2 { font-size: 1.8rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; margin-bottom: 0.2rem; }
+.tm-stats { font-size: 0.85rem; color: var(--text-muted); }
+.tm-card { background: rgba(19, 27, 46, 0.6); backdrop-filter: blur(12px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.tm-form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 1rem; align-items: flex-start; }
+.tm-form-grid .form-group { margin-bottom: 0; }
+.tm-form-grid label { font-size: 0.8rem; font-weight: 500; color: #cbd5e1; margin-bottom: 0.4rem; display: block; }
+.tm-form-grid input, .tm-form-grid select { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.6rem 0.8rem; border-radius: 8px; color: #f8fafc; width: 100%; transition: all 0.2s; }
+.tm-form-grid input:focus, .tm-form-grid select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+
+.tm-filters-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem; }
+.tm-filters-left, .tm-filters-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.tm-select { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); font-size: 0.85rem; padding: 0.4rem 2rem 0.4rem 1rem; border-radius: 20px; outline: none; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l3 3 3-3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.8rem center; }
+.tm-select:hover { background-color: rgba(255, 255, 255, 0.08); }
+
+.todo-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.todo-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.2rem; background: rgba(30, 41, 59, 0.3); border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;
+}
+.todo-item:hover { background: rgba(30, 41, 59, 0.6); border-color: rgba(255,255,255,0.1); }
+.todo-item.done { animation: todo-pop-out 5s forwards; pointer-events: none; }
+@keyframes todo-pop-out {
+  0%, 94% { opacity: 1; transform: scale(1); }
+  97% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+.todo-checkbox-wrapper { display: flex; align-items: center; gap: 1rem; flex: 1; overflow: hidden; }
+.todo-checkbox { appearance: none; width: 18px; height: 18px; border: 2px solid #64748b; border-radius: 4px; cursor: pointer; position: relative; background: transparent; flex-shrink: 0; transition: all 0.2s; }
+.todo-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+.todo-checkbox:checked::after { content: '✓'; position: absolute; color: white; font-size: 11px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.todo-content { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; }
+.todo-desc { font-weight: 500; font-size: 0.95rem; color: #f8fafc; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.todo-item.done .todo-desc { text-decoration: line-through; color: #64748b; }
+.todo-meta { display: flex; gap: 1rem; align-items: center; font-size: 0.75rem; color: #94a3b8; }
+.todo-badge { padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; }
+.todo-badge.high { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.todo-badge.medium { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+.todo-badge.low { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.todo-course-tag { display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(99, 102, 241, 0.1); color: #818cf8; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.2); font-weight: 500; font-size: 0.65rem; }
+
 /* ==================== STUDENT DASHBOARD ==================== */
 .dashboard-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; height: calc(100vh - 64px); padding: 1.5rem; }
 .sidebar {
@@ -561,4 +605,7 @@ nav:not(.navbar-landing) {
   .navbar-landing { padding: 1rem 1.5rem; }
   .nav-links-landing { gap: 1rem; }
   .section { padding: 3rem 1.5rem; }
+  .tm-form-grid { grid-template-columns: 1fr; }
+  .tm-form-grid .form-group { grid-column: 1 !important; }
+  .tm-filters-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }

@@ -31,7 +31,8 @@ const UNI_NAMES = {
 const views = {
   welcome: document.getElementById('view-welcome'),
   auth: document.getElementById('view-auth'),
-  student: document.getElementById('view-student')
+  student: document.getElementById('view-student'),
+  todo: document.getElementById('view-todo')
 };
 const navbar = document.getElementById('navbar');
 const navbarLanding = document.getElementById('navbar-landing');
@@ -53,10 +54,12 @@ function init() {
   }
 
   const hash = window.location.hash.replace('#', '');
-  
+
   if (restored) {
     if (hash === 'student') {
       loadDashboard();
+    } else if (hash === 'todo') {
+      loadTodo();
     } else {
       loadDashboard();
     }
@@ -244,7 +247,7 @@ function setupEventListeners() {
       alert("Error: Course code not found. Cannot delete.");
       return;
     }
-    
+
     if (confirm(`Are you sure you want to permanently delete ${code} and all its sections from the global catalog?`)) {
       if (window.api.deleteCourseGlobal(code, state.currentUniId)) {
         document.getElementById('modal-course-info').classList.add('hidden');
@@ -271,7 +274,7 @@ function setupEventListeners() {
       exams: document.getElementById('info-link-exams').value.trim()
     };
     window.api.saveCourseLinks(state.currentUniId, code, linksData);
-    
+
     // Add visual feedback
     const btn = document.getElementById('btn-save-links');
     const ogText = btn.textContent;
@@ -295,7 +298,7 @@ function setupEventListeners() {
     const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
     const newDesc = document.getElementById('info-description-input').value.trim();
     window.api.saveCourseDescription(state.currentUniId, code, newDesc);
-    
+
     document.getElementById('info-description').textContent = newDesc || 'No description available.';
     document.getElementById('info-description').classList.remove('hidden');
     document.getElementById('info-description-input').classList.add('hidden');
@@ -318,16 +321,36 @@ function setupEventListeners() {
     const rating = document.getElementById('review-rating').value;
     const text = document.getElementById('review-text').value.trim();
     if (!text) { alert('Please write a feedback message.'); return; }
-    
+
     window.api.addCourseFeedback(state.currentUniId, code, {
       userId: state.currentUser.id,
       username: state.currentUser.username,
       rating: parseInt(rating),
       text
     });
-    
+
     document.getElementById('review-form-container').classList.add('hidden');
     renderCourseFeedbacks(code);
+  });
+
+  // To-Do List UI
+  document.getElementById('btn-toggle-task-form').addEventListener('click', () => {
+    const formContainer = document.getElementById('tm-create-form-container');
+    formContainer.classList.toggle('hidden');
+  });
+  document.getElementById('btn-cancel-task').addEventListener('click', () => {
+    document.getElementById('tm-create-form-container').classList.add('hidden');
+    document.getElementById('form-todo').reset();
+  });
+
+  // To-do filter listeners
+  ['filter-status', 'filter-priority', 'sort-by'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderTodos);
+  });
+  document.getElementById('filter-course').addEventListener('input', renderTodos);
+  document.getElementById('form-todo').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitTodoTask();
   });
 
   // Search Auto-Complete
@@ -368,7 +391,7 @@ function handleSearchAutocomplete(query) {
         <div style="font-size:0.75rem; color:var(--text-muted);">${c.code} · ${c.faculty}</div>
       </div>
     `).join('');
-    
+
     dropdown.querySelectorAll('.search-result-item').forEach(el => {
       el.addEventListener('mouseover', () => el.style.background = 'var(--surface-2)');
       el.addEventListener('mouseout', () => el.style.background = 'transparent');
@@ -455,22 +478,22 @@ function openCourseInfo(code) {
   const allCourses = window.api.getPublicCourses(state.currentUniId);
   const sections = allCourses.filter(c => c.code === code);
   if (sections.length === 0) return;
-  
+
   const sample = sections[0];
   document.getElementById('info-title').textContent = sample.name;
   document.getElementById('info-code').textContent = sample.code;
   document.getElementById('info-faculty').textContent = sample.faculty || '—';
   document.getElementById('info-credits').textContent = sample.credits || '—';
-  
+
   const details = window.api.getCourseDetails(state.currentUniId, code);
   const desc = details.description || sample.description || `${sample.name} is a comprehensive course covering the foundational and advanced concepts required for mastering this discipline within the ${sample.faculty} department.`;
-  
+
   document.getElementById('info-description').textContent = desc;
   document.getElementById('info-description-input').value = desc;
-  
+
   document.getElementById('btn-save-description').dataset.code = code;
   document.getElementById('btn-submit-review').dataset.code = code;
-  
+
   // reset UI states
   document.getElementById('info-description').classList.remove('hidden');
   document.getElementById('info-description-input').classList.add('hidden');
@@ -485,7 +508,7 @@ function openCourseInfo(code) {
   document.getElementById('info-link-rec').value = links.rec || '';
   document.getElementById('info-link-exams').value = links.exams || '';
   document.getElementById('btn-save-links').dataset.code = code;
-  
+
   document.getElementById('btn-remove-course-schedule').dataset.code = code;
   document.getElementById('btn-delete-course-global').dataset.code = code;
   document.getElementById('modal-course-info').classList.remove('hidden');
@@ -501,7 +524,7 @@ function renderTimetable() {
 
   let previewCourses = [];
   if (state.previewCourseCode) {
-    previewCourses = allCourses.filter(c => 
+    previewCourses = allCourses.filter(c =>
       c.code === state.previewCourseCode && !scheduleIds.includes(c.id)
     );
   }
@@ -518,10 +541,10 @@ function renderTimetable() {
   for (let i = 0; i < TOTAL_ROWS; i++) {
     const hour = START_HOUR + i;
     const row = i + 2;
-    html += `<div class="tt-time" style="grid-column:1; grid-row:${row};">${String(hour).padStart(2,'0')}:00</div>`;
+    html += `<div class="tt-time" style="grid-column:1; grid-row:${row};">${String(hour).padStart(2, '0')}:00</div>`;
     for (let d = 0; d < 5; d++) {
       html += `<div class="tt-cell-empty" data-day="${DAYS[d]}" data-hour="${hour}"
-        style="grid-column:${d+2}; grid-row:${row};"
+        style="grid-column:${d + 2}; grid-row:${row};"
         ondragover="event.preventDefault(); this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="handleDropGlobal(event, this)"
@@ -571,8 +594,8 @@ function selEnd(e, cell) {
   // Pre-fill and open the custom event modal
   document.getElementById('cust-title').value = '';
   document.getElementById('cust-day').value = selection.day;
-  document.getElementById('cust-start').value = String(minH).padStart(2,'0') + ':00';
-  document.getElementById('cust-end').value = String(maxH).padStart(2,'0') + ':00';
+  document.getElementById('cust-start').value = String(minH).padStart(2, '0') + ':00';
+  document.getElementById('cust-end').value = String(maxH).padStart(2, '0') + ':00';
   document.getElementById('cust-notes').value = '';
   document.getElementById('modal-custom').classList.remove('hidden');
 
@@ -598,15 +621,15 @@ function clearSelectionHighlight() {
 }
 
 const courseColors = [
-  '#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', 
-  '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', 
+  '#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6',
+  '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6',
   '#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316'
 ];
 
 function getCourseColorStr(code) {
   if (!code) return '#3b82f6';
   let hash = 0;
-  for(let i=0; i<code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
   return courseColors[Math.abs(hash) % courseColors.length];
 }
 
@@ -633,7 +656,7 @@ function buildBlock(item, isCustom, isPreview = false) {
   const clickAction = isPreview ? `handlePreviewSelect('${safeId}')` : `openEditModalGlobal('${safeId}', ${isCustom})`;
   const extraClass = isPreview ? 'preview' : '';
   const badgeHTML = isPreview ? `<div class="preview-badge">${item.type} ${item.group || ''}</div>` : '';
-  
+
   const roomText = isCustom ? (item.room || '') : (pref.room || item.room || '');
   const notesText = isCustom ? (item.notes || '') : (pref.notes || item.notes || '');
   const bottomText = [roomText, notesText].filter(Boolean).join(' • ');
@@ -691,8 +714,8 @@ function handleDropGlobal(e, cell) {
   const dur = eMins - sMins;
   const nS = newHour * 60 + parseInt(oldStart.split(':')[1]);
   const nE = nS + dur;
-  const newStart = String(Math.floor(nS/60)).padStart(2,'0') + ':' + String(nS%60).padStart(2,'0');
-  const newEnd = String(Math.floor(nE/60)).padStart(2,'0') + ':' + String(nE%60).padStart(2,'0');
+  const newStart = String(Math.floor(nS / 60)).padStart(2, '0') + ':' + String(nS % 60).padStart(2, '0');
+  const newEnd = String(Math.floor(nE / 60)).padStart(2, '0') + ':' + String(nE % 60).padStart(2, '0');
 
   if (payload.isCustom) {
     window.api.updateCustomEvent(payload.id, { day: newDay, start: newStart, end: newEnd });
@@ -716,7 +739,7 @@ function openEditModalGlobal(id, isCustom) {
     document.getElementById('edit-day').value = ev.day || 'Sunday';
     document.getElementById('edit-start').value = ev.start || '08:00';
     document.getElementById('edit-end').value = ev.end || '10:00';
-    document.getElementById('edit-room').value = ev.room || ''; 
+    document.getElementById('edit-room').value = ev.room || '';
     document.getElementById('edit-notes').value = ev.notes || '';
   } else {
     const ev = window.api.getPublicCourses(state.currentUniId).find(c => c.id === id);
@@ -747,7 +770,7 @@ function handleSaveEdit() {
     window.api.updateCustomEvent(id, { color, day, start, end, room, notes });
   } else {
     window.api.saveEventPreference(state.currentUser.id, id, { color, day, start, end, room, notes });
-    
+
     // Syndicate color to ALL sections of the same course
     const ev = window.api.getPublicCourses(state.currentUniId).find(c => c.id === id);
     if (ev && ev.code) {
@@ -802,11 +825,11 @@ function submitCourseRequest() {
     credits: document.getElementById('req-credits').value || '0',
     notes: document.getElementById('req-notes').value
   };
-  
+
   const newCourse = window.api.createCourse(courseData);
   // Automatically add the newly created course section to the user's schedule
   window.api.addToSchedule(state.currentUser.id, newCourse.id);
-  
+
   document.getElementById('form-request-course').reset();
   document.getElementById('modal-request').classList.add('hidden');
   renderStudentDashboard();
@@ -815,24 +838,24 @@ function submitCourseRequest() {
 function renderCourseFeedbacks(code) {
   const details = window.api.getCourseDetails(state.currentUniId, code);
   const feedbacks = details.feedbacks || [];
-  
+
   let avgRating = 0;
   if (feedbacks.length > 0) {
     avgRating = feedbacks.reduce((sum, f) => sum + parseInt(f.rating), 0) / feedbacks.length;
   }
-  
+
   const rounded = Math.round(avgRating);
   const starsStr = feedbacks.length > 0 ? ('★'.repeat(rounded) + '☆'.repeat(5 - rounded)) : '☆☆☆☆☆';
-  
+
   document.getElementById('info-rating').textContent = starsStr;
   document.getElementById('info-feedback-count').textContent = `${feedbacks.length} Reviews`;
-  
+
   const listEl = document.getElementById('info-feedbacks-list');
   if (feedbacks.length === 0) {
     listEl.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem;">Be the first to review this course!</p>';
     return;
   }
-  
+
   listEl.innerHTML = feedbacks.map(f => `
     <div style="background:var(--bg-color); border:1px solid var(--border); padding:0.75rem; border-radius:6px;">
       <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
@@ -860,6 +883,136 @@ document.addEventListener('keydown', (e) => {
     renderStudentDashboard();
   }
 });
+
+// ==================== TO-DO LIST ====================
+function loadTodo() {
+  showView('todo');
+  renderTodos();
+}
+
+function submitTodoTask() {
+  const desc = document.getElementById('todo-desc').value.trim();
+  const importance = document.getElementById('todo-importance').value;
+  const dueDate = document.getElementById('todo-date').value;
+  const courseCode = document.getElementById('todo-course').value;
+
+  if (!desc) return;
+
+  window.api.addTodo(state.currentUser.id, { description: desc, importance, dueDate, courseCode });
+
+  document.getElementById('form-todo').reset();
+  document.getElementById('tm-create-form-container').classList.add('hidden');
+  renderTodos();
+}
+
+function renderTodos() {
+  const container = document.getElementById('todo-list-container');
+  let todos = window.api.getTodos(state.currentUser.id);
+
+  // Update Stats
+  const activeCount = todos.filter(t => t.status !== 'done').length;
+  const doneCount = todos.filter(t => t.status === 'done').length;
+  document.getElementById('tm-stats').textContent = `${activeCount} active · ${doneCount} completed`;
+
+  // Filters
+  const fStatus = document.getElementById('filter-status').value;
+  const fPriority = document.getElementById('filter-priority').value;
+  const fCourse = document.getElementById('filter-course').value.trim().toLowerCase();
+
+  if (fStatus !== 'all') {
+    todos = todos.filter(t => t.status === fStatus);
+  }
+  if (fPriority !== 'all') {
+    todos = todos.filter(t => t.importance === fPriority);
+  }
+  if (fCourse !== '') {
+    todos = todos.filter(t => t.courseCode && t.courseCode.toLowerCase().includes(fCourse));
+  }
+
+  // Sort
+  const sortBy = document.getElementById('sort-by').value;
+  const importanceValues = { high: 3, medium: 2, low: 1 };
+
+  todos.sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+    if (sortBy === 'priority') {
+      return importanceValues[b.importance] - importanceValues[a.importance];
+    } else {
+      // sort by date
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.localeCompare(b.dueDate);
+      } else if (a.dueDate) { return -1; }
+      else if (b.dueDate) { return 1; }
+      else { return importanceValues[b.importance] - importanceValues[a.importance]; }
+    }
+  });
+
+  if (todos.length === 0) {
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; color:var(--text-muted); text-align:center;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:1rem; opacity:0.5;">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <path d="M9 16l2 2 4-4"/>
+        </svg>
+        <div style="font-size:1.1rem; font-weight:500; color:#f8fafc; margin-bottom:0.4rem;">No tasks found</div>
+        <div style="font-size:0.85rem;">Click "New Task" to create your first task</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  todos.forEach(t => {
+    const isDone = t.status === 'done';
+    const courseBadge = t.courseCode ? `<span class="todo-course-tag">${t.courseCode}</span>` : '';
+    html += `
+      <div class="todo-item ${isDone ? 'done' : ''}" id="todo-el-${t.id}">
+        <div class="todo-checkbox-wrapper">
+          <input type="checkbox" class="todo-checkbox" data-id="${t.id}" ${isDone ? 'checked disabled' : ''}>
+          <div class="todo-content">
+            <div class="todo-desc">${t.description}</div>
+            <div class="todo-meta">
+              <span>Due: ${t.dueDate || 'No date'}</span>
+              <span class="todo-badge ${t.importance}">${t.importance}</span>
+              ${courseBadge}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.todo-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const id = e.target.dataset.id || e.target.getAttribute('data-id');
+        window.api.updateTodoStatus(id, 'done');
+
+        const todoEl = document.getElementById('todo-el-' + id);
+        if (todoEl) {
+          todoEl.classList.add('done');
+          e.target.disabled = true;
+
+          let activeCountsNow = parseInt(document.getElementById('tm-stats').textContent.split(' ')[0]) - 1;
+          let doneCountsNow = parseInt(document.getElementById('tm-stats').textContent.split(' ')[3]) + 1;
+          document.getElementById('tm-stats').textContent = `${Math.max(0, activeCountsNow)} active · ${doneCountsNow} completed`;
+        }
+
+        setTimeout(() => {
+          if (window.api.getTodos(state.currentUser.id).some(x => x.id === id)) {
+            window.api.removeTodo(id);
+            renderTodos();
+          }
+        }, 5000);
+      }
+    });
+  });
+}
 
 // ==================== START ====================
 document.addEventListener('DOMContentLoaded', init);
