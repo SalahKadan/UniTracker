@@ -97,6 +97,49 @@ class DataStore {
     return this.db.schedules[userId] || [];
   }
 
+  ensureSchedule(userId) {
+    if (!this.db.schedules[userId]) {
+      this.db.schedules[userId] = [];
+      this.saveData();
+    }
+  }
+
+  migrateGuestData(guestId, registeredId) {
+    // Migrate schedule
+    if (this.db.schedules[guestId]) {
+      if (!this.db.schedules[registeredId]) this.db.schedules[registeredId] = [];
+      this.db.schedules[guestId].forEach(id => {
+        if (!this.db.schedules[registeredId].includes(id)) {
+          this.db.schedules[registeredId].push(id);
+        }
+      });
+      delete this.db.schedules[guestId];
+    }
+
+    // Migrate todos
+    if (this.db.todos) {
+      this.db.todos.forEach(t => {
+        if (t.userId === guestId) t.userId = registeredId;
+      });
+    }
+
+    // Migrate custom events
+    if (this.db.customEvents) {
+      this.db.customEvents.forEach(e => {
+        if (e.userId === guestId) e.userId = registeredId;
+      });
+    }
+
+    // Migrate preferences
+    if (this.db.preferences && this.db.preferences[guestId]) {
+      if (!this.db.preferences[registeredId]) this.db.preferences[registeredId] = {};
+      Object.assign(this.db.preferences[registeredId], this.db.preferences[guestId]);
+      delete this.db.preferences[guestId];
+    }
+
+    this.saveData();
+  }
+
   createCourse(courseData) {
     const newCourse = { id: 'c_' + Date.now() + Math.random().toString(36).substr(2,5), ...courseData };
     this.db.courses.push(newCourse);
@@ -124,6 +167,27 @@ class DataStore {
       }
     });
 
+    this.saveData();
+    return true;
+  }
+
+  editCourseSession(sessionId, newData) {
+    const idx = this.db.courses.findIndex(c => c.id === sessionId);
+    if (idx !== -1) {
+      this.db.courses[idx] = { ...this.db.courses[idx], ...newData };
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
+  deleteCourseSession(sessionId) {
+    this.db.courses = this.db.courses.filter(c => c.id !== sessionId);
+    this.db.users.forEach(user => {
+      if (this.db.schedules[user.id]) {
+        this.db.schedules[user.id] = this.db.schedules[user.id].filter(id => id !== sessionId);
+      }
+    });
     this.saveData();
     return true;
   }

@@ -609,3 +609,30 @@ nav:not(.navbar-landing) {
   .tm-form-grid .form-group { grid-column: 1 !important; }
   .tm-filters-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }
+
+/* ==================== GUEST UNI PICKER ==================== */
+.btn-guest-uni:hover {
+  background: var(--primary-dim) !important;
+  border-color: var(--primary) !important;
+  transform: translateX(4px);
+}
+
+#modal-guest-uni {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(6px);
+}
+
+#modal-guest-uni.hidden {
+  display: none !important;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

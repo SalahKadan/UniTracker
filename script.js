@@ -2,7 +2,10 @@
 const state = {
   currentUniId: null,
   currentUser: null,
-  authMode: 'login'
+  authMode: 'login',
+  previewCourseCodes: [],
+  catalogCourseCodes: [],
+  isGuest: false
 };
 
 // Constants
@@ -37,19 +40,47 @@ const views = {
 const navbar = document.getElementById('navbar');
 const navbarLanding = document.getElementById('navbar-landing');
 
+// ==================== CATALOG STATE PERSISTENCE ====================
+function saveCatalogState() {
+  localStorage.setItem('uniSchedule_catalogCodes', JSON.stringify(state.catalogCourseCodes || []));
+}
+function loadCatalogState() {
+  try {
+    const saved = localStorage.getItem('uniSchedule_catalogCodes');
+    if (saved) state.catalogCourseCodes = JSON.parse(saved);
+  } catch (e) { /* ignore parse errors */ }
+}
+
 // ==================== INIT ====================
 function init() {
+  // Try to restore a registered user session
   const savedUserId = localStorage.getItem('uniSchedule_session');
   let restored = false;
 
   if (savedUserId) {
-    const user = window.api.getUser(savedUserId);
-    if (user) {
-      state.currentUser = user;
-      state.currentUniId = user.uniId;
-      restored = true;
+    // Check if it's a guest session
+    if (savedUserId.startsWith('guest_')) {
+      const guestUniId = localStorage.getItem('uniSchedule_guestUni');
+      if (guestUniId) {
+        state.currentUser = { id: savedUserId, username: 'Guest' };
+        state.currentUniId = guestUniId;
+        state.isGuest = true;
+        // Ensure guest has a schedule bucket
+        if (!window.api.getPersonalSchedule(savedUserId)) {
+          window.api.ensureSchedule(savedUserId);
+        }
+        restored = true;
+      }
     } else {
-      localStorage.removeItem('uniSchedule_session');
+      const user = window.api.getUser(savedUserId);
+      if (user) {
+        state.currentUser = user;
+        state.currentUniId = user.uniId;
+        state.isGuest = false;
+        restored = true;
+      } else {
+        localStorage.removeItem('uniSchedule_session');
+      }
     }
   }
 
@@ -57,10 +88,13 @@ function init() {
 
   if (restored) {
     if (hash === 'student') {
+      loadCatalogState();
       loadDashboard();
     } else if (hash === 'todo') {
+      loadCatalogState();
       loadTodo();
     } else {
+      loadCatalogState();
       loadDashboard();
     }
   } else {
@@ -72,6 +106,27 @@ function init() {
   }
 
   setupEventListeners();
+}
+
+// ==================== GUEST MODE ====================
+function enterGuestMode() {
+  document.getElementById('modal-guest-uni').classList.remove('hidden');
+}
+
+function confirmGuestUni(uniId) {
+  const guestId = 'guest_' + uniId + '_local';
+  state.currentUser = { id: guestId, username: 'Guest' };
+  state.currentUniId = uniId;
+  state.isGuest = true;
+
+  // Ensure schedule bucket exists
+  window.api.ensureSchedule(guestId);
+
+  localStorage.setItem('uniSchedule_session', guestId);
+  localStorage.setItem('uniSchedule_guestUni', uniId);
+
+  document.getElementById('modal-guest-uni').classList.add('hidden');
+  loadDashboard();
 }
 
 function showView(viewId) {
@@ -103,8 +158,16 @@ function showView(viewId) {
     navbarLanding.classList.add('hidden');
     navbar.classList.remove('hidden');
     if (state.currentUser) {
-      document.getElementById('nav-user-name').textContent = state.currentUser.username;
+      document.getElementById('nav-user-name').textContent = state.isGuest ? '👤 Guest' : state.currentUser.username;
       document.getElementById('nav-uni-name').textContent = UNI_NAMES[state.currentUniId] || '';
+      // Show Register/Login for guests, Logout for registered users
+      if (state.isGuest) {
+        document.getElementById('btn-auth-nav').classList.remove('hidden');
+        document.getElementById('btn-logout').classList.add('hidden');
+      } else {
+        document.getElementById('btn-auth-nav').classList.add('hidden');
+        document.getElementById('btn-logout').classList.remove('hidden');
+      }
     }
   }
 
@@ -147,6 +210,7 @@ function setupEventListeners() {
     e.preventDefault();
     const username = document.getElementById('auth-username').value.trim();
     const password = document.getElementById('auth-password').value;
+    const previousGuestId = state.isGuest ? state.currentUser.id : null;
 
     if (state.authMode === 'login') {
       const uniId = document.getElementById('login-university').value;
@@ -156,9 +220,15 @@ function setupEventListeners() {
           alert('This account does not belong to the selected university.');
           return;
         }
+        // Migrate guest data if applicable
+        if (previousGuestId) {
+          window.api.migrateGuestData(previousGuestId, user.id);
+        }
         state.currentUniId = uniId;
         state.currentUser = user;
+        state.isGuest = false;
         localStorage.setItem('uniSchedule_session', user.id);
+        localStorage.removeItem('uniSchedule_guestUni');
         loadDashboard();
       } else {
         alert('Invalid username or password.');
@@ -180,9 +250,15 @@ function setupEventListeners() {
         email, firstname, lastname, studentid, faculty
       });
       if (res.success) {
+        // Migrate guest data if applicable
+        if (previousGuestId) {
+          window.api.migrateGuestData(previousGuestId, res.user.id);
+        }
         state.currentUniId = uniId;
         state.currentUser = res.user;
+        state.isGuest = false;
         localStorage.setItem('uniSchedule_session', res.user.id);
+        localStorage.removeItem('uniSchedule_guestUni');
         loadDashboard();
       } else {
         alert(res.error);
@@ -195,7 +271,12 @@ function setupEventListeners() {
     state.currentUser = null;
     state.currentUniId = null;
     state.authMode = 'login';
+    state.isGuest = false;
+    state.catalogCourseCodes = [];
+    state.previewCourseCodes = [];
     localStorage.removeItem('uniSchedule_session');
+    localStorage.removeItem('uniSchedule_guestUni');
+    localStorage.removeItem('uniSchedule_catalogCodes');
     document.getElementById('auth-form').reset();
     showView('welcome');
   });
@@ -248,13 +329,15 @@ function setupEventListeners() {
       return;
     }
 
-    if (confirm(`Are you sure you want to permanently delete ${code} and all its sections from the global catalog?`)) {
-      if (window.api.deleteCourseGlobal(code, state.currentUniId)) {
-        document.getElementById('modal-course-info').classList.add('hidden');
-        renderStudentDashboard();
-      } else {
-        alert("Deletion failed or course was not found globally.");
-      }
+    if (window.api.deleteCourseGlobal(code, state.currentUniId)) {
+      document.getElementById('modal-course-info').classList.add('hidden');
+      // Clean up state arrays
+      if (state.previewCourseCodes) state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
+      if (state.catalogCourseCodes) state.catalogCourseCodes = state.catalogCourseCodes.filter(c => c !== code);
+      saveCatalogState();
+      renderStudentDashboard();
+    } else {
+      alert("Deletion failed or course was not found globally.");
     }
   });
 
@@ -397,7 +480,11 @@ function handleSearchAutocomplete(query) {
       el.addEventListener('mouseout', () => el.style.background = 'transparent');
       el.addEventListener('click', (ev) => {
         const code = ev.currentTarget.dataset.code || ev.currentTarget.getAttribute('data-code');
-        state.previewCourseCode = code;
+        if (!state.previewCourseCodes) state.previewCourseCodes = [];
+        if (!state.previewCourseCodes.includes(code)) state.previewCourseCodes.push(code);
+        if (!state.catalogCourseCodes) state.catalogCourseCodes = [];
+        if (!state.catalogCourseCodes.includes(code)) state.catalogCourseCodes.push(code);
+        saveCatalogState();
         document.getElementById('course-search').value = '';
         dropdown.classList.add('hidden');
         renderStudentDashboard();
@@ -427,32 +514,43 @@ function renderPublicCourses() {
   // Filter only added courses
   const myCourses = allCourses.filter(c => schedule.includes(c.id));
 
-  if (myCourses.length === 0 && !state.previewCourseCode) {
+  if (!state.catalogCourseCodes) state.catalogCourseCodes = [];
+
+  // Sync schedule to catalog so any scheduled course is explicitly in catalog
+  myCourses.forEach(c => {
+    if (!state.catalogCourseCodes.includes(c.code)) state.catalogCourseCodes.push(c.code);
+  });
+  saveCatalogState();
+
+  if (state.catalogCourseCodes.length === 0) {
     container.innerHTML = '<p style="color:var(--text-muted); padding:1rem; text-align:center; font-size:0.9rem;">You have not added any courses yet.<br><br>Use the search bar above to browse catalog.</p>';
     return;
   }
 
-  // Group selected courses by code
+  // Group all catalog courses by code for the left side view
   const grouped = {};
-  myCourses.forEach(c => {
-    if (!grouped[c.code]) grouped[c.code] = { name: c.name, code: c.code, credits: c.credits, faculty: c.faculty, sections: [] };
-    grouped[c.code].sections.push(c);
+  state.catalogCourseCodes.forEach(catCode => {
+    const defaultSample = allCourses.find(c => c.code === catCode);
+    if (defaultSample) {
+      grouped[catCode] = { name: defaultSample.name, code: defaultSample.code, credits: defaultSample.credits, faculty: defaultSample.faculty, sections: [] };
+    }
   });
 
-  // If previewing a not-yet-added course, inject it into grouped so they can close it
-  if (state.previewCourseCode && !grouped[state.previewCourseCode]) {
-    const previewSample = allCourses.find(c => c.code === state.previewCourseCode);
-    if (previewSample) {
-      grouped[state.previewCourseCode] = { name: previewSample.name, code: previewSample.code, credits: previewSample.credits, faculty: previewSample.faculty, sections: [] };
-    }
-  }
+  // Inject user's specific sections
+  myCourses.forEach(c => {
+    if (grouped[c.code]) grouped[c.code].sections.push(c);
+  });
 
   let html = '';
   Object.values(grouped).forEach(group => {
     html += `
       <div class="course-card" style="position:relative;">
-        <button class="btn-info-icon" data-code="${group.code}" style="position:absolute; top:8px; right:8px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; z-index:2; transition:all 0.2s;">i</button>
-        <h4 style="padding-right:20px; position:relative; z-index:1;">${group.name}</h4>
+        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:0.25rem; z-index:2;">
+          <button class="btn-info-icon" title="Course Info" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; transition:all 0.2s;">i</button>
+          <button class="btn-preview-icon" title="Reset & Pick Sessions" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.7rem; transition:all 0.2s;">👁</button>
+          ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
+        </div>
+        <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:32px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
         <div class="course-meta" style="position:relative; z-index:1; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem; font-weight:500;">
           ${group.code}  ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
         </div>
@@ -466,9 +564,62 @@ function renderPublicCourses() {
   container.querySelectorAll('.btn-info-icon').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
-      // If clicking info, also bring back preview mode so they can see and select sections!
-      state.previewCourseCode = code;
+      if (!state.previewCourseCodes) state.previewCourseCodes = [];
+      if (!state.previewCourseCodes.includes(code)) state.previewCourseCodes.push(code);
+      if (!state.catalogCourseCodes) state.catalogCourseCodes = [];
+      if (!state.catalogCourseCodes.includes(code)) state.catalogCourseCodes.push(code);
+      saveCatalogState();
       openCourseInfo(code);
+      renderStudentDashboard();
+    });
+  });
+
+  // Eye Icon Action: Reset & Pick 
+  container.querySelectorAll('.btn-preview-icon').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent card click
+      const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+      if (!state.previewCourseCodes) state.previewCourseCodes = [];
+      if (!state.previewCourseCodes.includes(code)) state.previewCourseCodes.push(code);
+      if (!state.catalogCourseCodes) state.catalogCourseCodes = [];
+      if (!state.catalogCourseCodes.includes(code)) state.catalogCourseCodes.push(code);
+      saveCatalogState();
+
+      const allCourses = window.api.getPublicCourses(state.currentUniId);
+      const sections = allCourses.filter(c => c.code === code);
+      sections.forEach(s => {
+        window.api.removeFromSchedule(state.currentUser.id, s.id);
+      });
+      renderStudentDashboard();
+    });
+  });
+
+  // Confirm Selection Action
+  container.querySelectorAll('.btn-confirm-icon').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent card click
+      const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
+      if (state.previewCourseCodes) {
+        state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
+      }
+      renderStudentDashboard();
+    });
+  });
+
+  // Unpick entirely (Course name click)
+  container.querySelectorAll('.course-title-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const code = e.currentTarget.dataset.code;
+      const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+      sections.forEach(s => window.api.removeFromSchedule(state.currentUser.id, s.id));
+      if (state.previewCourseCodes) {
+        state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
+      }
+      if (state.catalogCourseCodes) {
+        state.catalogCourseCodes = state.catalogCourseCodes.filter(c => c !== code);
+      }
+      saveCatalogState();
       renderStudentDashboard();
     });
   });
@@ -509,9 +660,183 @@ function openCourseInfo(code) {
   document.getElementById('info-link-exams').value = links.exams || '';
   document.getElementById('btn-save-links').dataset.code = code;
 
+  renderCourseSessions(code);
+
   document.getElementById('btn-remove-course-schedule').dataset.code = code;
   document.getElementById('btn-delete-course-global').dataset.code = code;
   document.getElementById('modal-course-info').classList.remove('hidden');
+}
+
+function renderCourseSessions(code) {
+  const container = document.getElementById('info-sessions-container');
+  const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+
+  let html = '';
+  sections.forEach(s => {
+    html += `
+      <div class="card" style="padding:0.75rem; background:var(--surface-2); border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" id="session-display-${s.id}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <strong style="color:var(--text-light);">${s.type.toUpperCase()}</strong> - Grp ${s.group || '-'}<br>
+            <span style="color:var(--text-muted);">${s.day} | ${s.start} - ${s.end}</span><br>
+            <span style="color:var(--text-muted);">${s.lecturer || 'N/A'} | ${s.room || 'N/A'}</span>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn-text btn-edit-session" data-id="${s.id}" style="font-size:0.75rem; padding:0;">Edit</button>
+            <button class="btn-text btn-del-session" data-id="${s.id}" style="font-size:0.75rem; padding:0; color:var(--danger);">Del</button>
+          </div>
+        </div>
+      </div>
+      <div id="session-edit-${s.id}" class="hidden card" style="padding:0.75rem; background:var(--surface-1); border-radius:8px; border:1px solid var(--border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
+          <input type="text" id="es-type-${s.id}" value="${s.type}" placeholder="Type (e.g. lecture)" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" id="es-group-${s.id}" value="${s.group || ''}" placeholder="Group" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          <select id="es-day-${s.id}" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+            ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map(d => `<option value="${d}" ${s.day === d ? 'selected' : ''}>${d}</option>`).join('')}
+          </select>
+          <div style="display:flex; gap:0.25rem;">
+            <input type="time" id="es-start-${s.id}" value="${s.start}" style="width:50%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+            <input type="time" id="es-end-${s.id}" value="${s.end}" style="width:50%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          </div>
+          <input type="text" id="es-lecturer-${s.id}" value="${s.lecturer || ''}" placeholder="Lecturer" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" id="es-room-${s.id}" value="${s.room || ''}" placeholder="Room" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+          <button class="btn-text btn-cancel-edit-session" data-id="${s.id}" style="font-size:0.75rem;">Cancel</button>
+          <button class="btn-primary btn-save-session" data-id="${s.id}" data-code="${code}" style="font-size:0.75rem; padding:0.3rem 0.8rem;">Save</button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+    <div id="session-add-form" class="hidden card" style="padding:0.75rem; background:var(--surface-1); border-radius:8px; border:1px dashed var(--border); margin-top:0.5rem;">
+      <h5 style="margin-bottom:0.5rem; color:var(--text-light); font-size:0.85rem;">New Session</h5>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
+        <input type="text" id="as-type" placeholder="Type (e.g. tutorial)" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+        <input type="text" id="as-group" placeholder="Group (e.g. 1)" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+        <select id="as-day" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          <option value="Sunday">Sunday</option><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option>
+        </select>
+        <div style="display:flex; gap:0.25rem;">
+          <input type="time" id="as-start" style="width:50%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+          <input type="time" id="as-end" style="width:50%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+        </div>
+        <input type="text" id="as-lecturer" placeholder="Lecturer" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+        <input type="text" id="as-room" placeholder="Room" style="width:100%; padding:0.4rem; font-size:0.8rem; background:var(--bg-color); color:#fff; border:1px solid var(--border); border-radius:4px;">
+      </div>
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+        <button id="btn-cancel-add-session" class="btn-text" style="font-size:0.75rem;">Cancel</button>
+        <button id="btn-submit-add-session" class="btn-primary" data-code="${code}" style="font-size:0.75rem; padding:0.3rem 0.8rem;">Create Session</button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Listeners
+  const addFormBtn = document.getElementById('btn-add-global-session');
+  const newAddFormBtn = addFormBtn.cloneNode(true);
+  addFormBtn.parentNode.replaceChild(newAddFormBtn, addFormBtn);
+  newAddFormBtn.addEventListener('click', () => {
+    document.getElementById('session-add-form').classList.remove('hidden');
+  });
+
+  const addForm = document.getElementById('session-add-form');
+  if (addForm) {
+    document.getElementById('btn-cancel-add-session').addEventListener('click', () => {
+      addForm.classList.add('hidden');
+    });
+    document.getElementById('btn-submit-add-session').addEventListener('click', () => {
+      const type = document.getElementById('as-type').value.trim();
+      const group = document.getElementById('as-group').value.trim();
+      const day = document.getElementById('as-day').value;
+      const start = document.getElementById('as-start').value;
+      const end = document.getElementById('as-end').value;
+      const lecturer = document.getElementById('as-lecturer').value.trim();
+      const room = document.getElementById('as-room').value.trim();
+
+      if (!type || !start || !end) return alert('Type, start, and end times are required.');
+
+      const baseSection = sections[0];
+      const newSession = {
+        uniId: state.currentUniId,
+        code: baseSection.code,
+        name: baseSection.name,
+        faculty: baseSection.faculty,
+        credits: baseSection.credits,
+        type, group, day, start, end, lecturer, room,
+        approvedAt: new Date().toISOString()
+      };
+
+      const created = window.api.createCourse(newSession);
+      window.api.addToSchedule(state.currentUser.id, created.id);
+      if (document.getElementById('modal-course-info').classList.contains('hidden') === false) {
+        renderCourseSessions(code);
+      }
+      renderStudentDashboard();
+    });
+  }
+
+  container.querySelectorAll('.btn-edit-session').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      document.getElementById('session-display-' + id).classList.add('hidden');
+      document.getElementById('session-edit-' + id).classList.remove('hidden');
+    });
+  });
+
+  container.querySelectorAll('.btn-cancel-edit-session').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      document.getElementById('session-edit-' + id).classList.add('hidden');
+      document.getElementById('session-display-' + id).classList.remove('hidden');
+    });
+  });
+
+  container.querySelectorAll('.btn-save-session').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      const c = e.currentTarget.getAttribute('data-code');
+      const newData = {
+        type: document.getElementById('es-type-' + id).value.trim(),
+        group: document.getElementById('es-group-' + id).value.trim(),
+        day: document.getElementById('es-day-' + id).value,
+        start: document.getElementById('es-start-' + id).value,
+        end: document.getElementById('es-end-' + id).value,
+        lecturer: document.getElementById('es-lecturer-' + id).value.trim(),
+        room: document.getElementById('es-room-' + id).value.trim()
+      };
+      if (!newData.type || !newData.start || !newData.end) return alert('Type, start, and end times are required');
+      window.api.editCourseSession(id, newData);
+
+      if (document.getElementById('modal-course-info').classList.contains('hidden') === false) {
+        renderCourseSessions(c);
+      }
+      renderStudentDashboard();
+    });
+  });
+
+  container.querySelectorAll('.btn-del-session').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = e.currentTarget.getAttribute('data-id');
+      window.api.deleteCourseSession(id);
+
+      // If the last session is deleted, close the modal and refresh
+      const remainingSections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+      if (remainingSections.length === 0) {
+        document.getElementById('modal-course-info').classList.add('hidden');
+        if (state.previewCourseCodes) state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
+        if (state.catalogCourseCodes) state.catalogCourseCodes = state.catalogCourseCodes.filter(c => c !== code);
+        saveCatalogState();
+      } else {
+        renderCourseSessions(code);
+      }
+
+      renderStudentDashboard();
+    });
+  });
 }
 
 // ==================== TIMETABLE ====================
@@ -519,13 +844,13 @@ function renderTimetable() {
   const container = document.getElementById('student-timetable');
   const scheduleIds = window.api.getPersonalSchedule(state.currentUser.id);
   const allCourses = window.api.getPublicCourses(state.currentUniId);
-  const myCourses = allCourses.filter(c => scheduleIds.includes(c.id));
+  let myCourses = allCourses.filter(c => scheduleIds.includes(c.id));
   const myCustoms = window.api.getCustomEvents(state.currentUser.id);
 
   let previewCourses = [];
-  if (state.previewCourseCode) {
+  if (state.previewCourseCodes && state.previewCourseCodes.length > 0) {
     previewCourses = allCourses.filter(c =>
-      c.code === state.previewCourseCode && !scheduleIds.includes(c.id)
+      state.previewCourseCodes.includes(c.code) && !scheduleIds.includes(c.id)
     );
   }
 
@@ -554,10 +879,77 @@ function renderTimetable() {
     }
   }
 
-  // Course blocks
-  myCourses.forEach(c => { html += buildBlock(c, false); });
-  myCustoms.forEach(ce => { html += buildBlock({ ...ce, name: ce.title }, true); });
-  previewCourses.forEach(p => { html += buildBlock(p, false, true); });
+  // --- Overlap Detection ---
+  // Collect ALL visible items into a flat list with metadata
+  const allItems = [];
+  myCourses.forEach(c => allItems.push({ item: c, isCustom: false, isPreview: false }));
+  myCustoms.forEach(ce => allItems.push({ item: { ...ce, name: ce.title }, isCustom: true, isPreview: false }));
+  previewCourses.forEach(p => allItems.push({ item: p, isCustom: false, isPreview: true }));
+
+  // Parse time info for each item
+  const parsed = allItems.map(entry => {
+    const pref = window.api.getEventPreference(state.currentUser.id, entry.item.id);
+    const day = pref.day || entry.item.day;
+    const startStr = pref.start || entry.item.start;
+    const endStr = pref.end || entry.item.end;
+    if (!startStr || !endStr || !day) return null;
+    const [sH, sM] = startStr.split(':').map(Number);
+    const [eH, eM] = endStr.split(':').map(Number);
+    const startMin = sH * 60 + sM;
+    const endMin = eH * 60 + eM;
+    return { ...entry, day, startMin, endMin, startStr, endStr };
+  }).filter(Boolean);
+
+  // Group by day
+  const byDay = {};
+  parsed.forEach(p => {
+    if (!byDay[p.day]) byDay[p.day] = [];
+    byDay[p.day].push(p);
+  });
+
+  // For each day, detect overlapping clusters and assign column positions
+  Object.keys(byDay).forEach(day => {
+    const events = byDay[day];
+    // Sort by start time, then by end time
+    events.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+
+    // Greedy column assignment
+    const columns = []; // columns[i] = endMin of the last event in column i
+    events.forEach(ev => {
+      let placed = false;
+      for (let c = 0; c < columns.length; c++) {
+        if (ev.startMin >= columns[c]) {
+          columns[c] = ev.endMin;
+          ev.colIndex = c;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        ev.colIndex = columns.length;
+        columns.push(ev.endMin);
+      }
+    });
+
+    // Now determine each event's total number of concurrent columns
+    // by looking at all events that overlap with it
+    events.forEach(ev => {
+      let maxCols = ev.colIndex + 1;
+      events.forEach(other => {
+        if (other === ev) return;
+        // Check if they overlap
+        if (other.startMin < ev.endMin && other.endMin > ev.startMin) {
+          maxCols = Math.max(maxCols, other.colIndex + 1);
+        }
+      });
+      ev.totalCols = maxCols;
+    });
+  });
+
+  // Render all blocks with overlap info
+  parsed.forEach(p => {
+    html += buildBlock(p.item, p.isCustom, p.isPreview, p.colIndex || 0, p.totalCols || 1);
+  });
 
   container.innerHTML = html;
 
@@ -633,7 +1025,7 @@ function getCourseColorStr(code) {
   return courseColors[Math.abs(hash) % courseColors.length];
 }
 
-function buildBlock(item, isCustom, isPreview = false) {
+function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols = 1) {
   const pref = window.api.getEventPreference(state.currentUser.id, item.id);
   const day = pref.day || item.day;
   const startStr = pref.start || item.start;
@@ -650,7 +1042,17 @@ function buildBlock(item, isCustom, isPreview = false) {
   if (!col || rowStart < 2) return '';
 
   const baseColor = isCustom ? (item.color || '#10b981') : getCourseColorStr(item.code);
-  const bgColor = pref.color || baseColor;
+  let bgColor = pref.color || baseColor;
+  if (!isCustom && !pref.color) {
+    const peers = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === item.code);
+    for (const p of peers) {
+      const pPref = window.api.getEventPreference(state.currentUser.id, p.id);
+      if (pPref && pPref.color) {
+        bgColor = pPref.color;
+        break;
+      }
+    }
+  }
   const safeId = item.id.replace(/'/g, "\\'");
 
   const clickAction = isPreview ? `handlePreviewSelect('${safeId}')` : `openEditModalGlobal('${safeId}', ${isCustom})`;
@@ -661,25 +1063,30 @@ function buildBlock(item, isCustom, isPreview = false) {
   const notesText = isCustom ? (item.notes || '') : (pref.notes || item.notes || '');
   const bottomText = [roomText, notesText].filter(Boolean).join(' • ');
 
+  // Split-view: calculate width and left offset for overlapping events
+  const widthPct = (100 / totalCols);
+  const leftPct = (colIndex * widthPct);
+
   return `<div class="course-block ${extraClass}" draggable="${!isPreview}"
     ondragstart="${!isPreview ? `handleDragStartGlobal(event, '${safeId}', ${isCustom})` : 'event.preventDefault()'}"
     ondragend="handleDragEndGlobal(event)"
     onclick="${clickAction}"
     style="grid-column:${col}; grid-row:${rowStart} / span ${span};
-      background:${bgColor}; color:#fff; margin:2px; padding:6px;
-      border-radius:6px; font-size:0.78rem; overflow:hidden;
-      box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:5;">
+      width:calc(${widthPct.toFixed(2)}% - 4px); margin-left:calc(${leftPct.toFixed(2)}% + 2px);
+      background:${bgColor}; color:#fff; padding:4px 5px;
+      border-radius:6px; font-size:0.75rem; overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:5;
+      position:relative;">
     ${badgeHTML}
-    ${!isCustom ? `<div style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-bottom:2px;">${item.code}</div>` : ''}
-    <div style="font-weight:600; line-height:1.2; margin-bottom:2px;">${item.name || item.title}</div>
-    ${!isCustom ? `<div style="font-size:0.75rem; margin-top:2px; opacity:0.9;">${item.type} ${item.group || ''}</div>` : ''}
-    <div style="font-size:0.75rem; margin-top:4px; opacity:0.8;">${bottomText}</div>
+    ${!isCustom ? `<div style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; margin-bottom:1px;">${item.code}</div>` : ''}
+    <div style="font-weight:600; line-height:1.15; margin-bottom:1px; ${totalCols > 1 ? 'font-size:0.7rem;' : ''}">${item.name || item.title}</div>
+    ${!isCustom ? `<div style="font-size:0.7rem; margin-top:1px; opacity:0.9;">${item.type} ${item.group || ''}</div>` : ''}
+    <div style="font-size:0.7rem; margin-top:2px; opacity:0.8;">${bottomText}</div>
   </div>`;
 }
 
 window.handlePreviewSelect = (id) => {
   window.api.addToSchedule(state.currentUser.id, id);
-  // Keep the preview mode open so they can easily add multiple things (e.g. lecture + tutorial)
   renderStudentDashboard();
 };
 
@@ -720,7 +1127,16 @@ function handleDropGlobal(e, cell) {
   if (payload.isCustom) {
     window.api.updateCustomEvent(payload.id, { day: newDay, start: newStart, end: newEnd });
   } else {
-    window.api.saveEventPreference(state.currentUser.id, payload.id, { day: newDay, start: newStart, end: newEnd });
+    window.api.editCourseSession(payload.id, { day: newDay, start: newStart, end: newEnd });
+    const pref = window.api.getEventPreference(state.currentUser.id, payload.id);
+    delete pref.day;
+    delete pref.start;
+    delete pref.end;
+    window.api.saveEventPreference(state.currentUser.id, payload.id, pref);
+  }
+
+  if (state.previewCourseCode && document.getElementById('modal-course-info') && !document.getElementById('modal-course-info').classList.contains('hidden')) {
+    renderCourseSessions(state.previewCourseCode);
   }
   renderTimetable();
 }

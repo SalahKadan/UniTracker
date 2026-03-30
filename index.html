@@ -18,7 +18,7 @@
     <div class="nav-links-landing">
       <a href="#features">Features</a>
       <a href="#universities">Universities</a>
-      <button class="btn-primary btn-glow" onclick="showView('auth')">Get Started</button>
+      <button class="btn-primary btn-glow" onclick="enterGuestMode()">Get Started</button>
     </div>
   </nav>
 
@@ -29,7 +29,8 @@
       <button class="btn-text" onclick="showView('student')">Schedule</button>
       <button class="btn-text" onclick="showView('todo')">To-Do List</button>
       <span id="nav-user-name"></span>
-      <button id="btn-logout" class="btn-outline">Logout</button>
+      <button id="btn-auth-nav" class="btn-primary btn-glow hidden" onclick="showView('auth')" style="font-size:0.85rem; padding:0.4rem 1rem;">Register / Login</button>
+      <button id="btn-logout" class="btn-outline hidden">Logout</button>
     </div>
   </nav>
 
@@ -50,7 +51,7 @@
             <h1>Organize your week<br>with <span class="gradient-text">UniSchedule</span></h1>
             <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple universities, and create the perfect balance between studies and your personal life.</p>
             <div class="hero-actions">
-              <button class="btn-primary btn-lg btn-glow" onclick="showView('auth')">Get Started for Free</button>
+              <button class="btn-primary btn-lg btn-glow" onclick="enterGuestMode()">Get Started for Free</button>
               <button class="btn-outline btn-lg" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
             </div>
             <div class="hero-stats">
@@ -154,7 +155,7 @@
       <div class="section cta-section">
         <h2>Ready to plan your semester?</h2>
         <p>Join students across Israel who are already using UniSchedule.</p>
-        <button class="btn-primary btn-lg btn-glow" onclick="showView('auth')">Get Started — It's Free</button>
+        <button class="btn-primary btn-lg btn-glow" onclick="enterGuestMode()">Get Started — It's Free</button>
       </div>
 
       <!-- Footer -->
@@ -162,6 +163,21 @@
         <p>© 2026 UniSchedule. Built for students, by students.</p>
       </footer>
     </section>
+
+    <!-- ==================== GUEST UNI PICKER MODAL ==================== -->
+    <div id="modal-guest-uni" class="modal-overlay hidden">
+      <div class="card" style="max-width:480px; width:90%; padding:2rem; animation: slideUp 0.3s ease;">
+        <h2 style="margin-bottom:0.25rem;">Choose Your University</h2>
+        <p style="color:var(--text-muted); margin-bottom:1.5rem; font-size:0.9rem;">You're entering as a <strong>Guest</strong>. Your data will be saved locally on this device. You can register anytime to sync across devices.</p>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <button class="btn-guest-uni" onclick="confirmGuestUni('huji')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Hebrew University of Jerusalem</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('tau')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Tel Aviv University</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('bgu')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Ben-Gurion University of the Negev</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('haifa')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> University of Haifa</button>
+        </div>
+        <button onclick="document.getElementById('modal-guest-uni').classList.add('hidden')" style="margin-top:1rem; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;">← Cancel</button>
+      </div>
+    </div>
 
     <!-- ==================== AUTH PAGE ==================== -->
     <section id="view-auth" class="view hidden">
@@ -472,6 +488,17 @@
         <p id="info-description" style="font-size:0.85rem; color:var(--text-muted); background:var(--surface-2); padding:0.75rem; border-radius:8px; margin:0;">No description available.</p>
         <textarea id="info-description-input" class="hidden" style="width:100%; border-radius:8px; padding:0.75rem; font-size:0.85rem; background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); min-height:80px; margin-bottom:0.5rem;"></textarea>
         <button id="btn-save-description" class="btn-secondary hidden" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Save Description</button>
+      </div>
+
+      <!-- Course Sessions & Times -->
+      <div style="margin-bottom:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Sessions & Times (Global)</h4>
+          <button id="btn-add-global-session" class="btn-text" style="font-size:0.75rem; padding:0; color:var(--primary);">+ Add Session</button>
+        </div>
+        <div id="info-sessions-container" style="display:flex; flex-direction:column; gap:0.5rem;">
+          <!-- dynamically rendered sessions here -->
+        </div>
       </div>
       
       <!-- Student Rating Header -->
