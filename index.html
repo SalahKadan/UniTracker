@@ -18,6 +18,7 @@
     <div class="nav-links-landing">
       <a href="#features">Features</a>
       <a href="#universities">Universities</a>
+      <button class="btn-text" onclick="showView('auth')" style="font-weight: 500; font-size: 0.95rem; margin-right: 0.5rem;">Login / Sign Up</button>
       <button class="btn-primary btn-glow" onclick="enterGuestMode()">Get Started</button>
     </div>
   </nav>
@@ -51,8 +52,9 @@
             <h1>Organize your week<br>with <span class="gradient-text">UniSchedule</span></h1>
             <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple universities, and create the perfect balance between studies and your personal life.</p>
             <div class="hero-actions">
+              <button class="btn-outline btn-lg" onclick="showView('auth')">Login / Sign Up</button>
               <button class="btn-primary btn-lg btn-glow" onclick="enterGuestMode()">Get Started for Free</button>
-              <button class="btn-outline btn-lg" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
+              <button class="btn-text btn-lg" style="opacity: 0.8;" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
             </div>
             <div class="hero-stats">
               <div class="hero-stat"><strong>10k+</strong><span>Students</span></div>
