@@ -563,12 +563,14 @@ function renderPublicCourses() {
   Object.values(grouped).forEach(group => {
     html += `
       <div class="course-card" style="position:relative;">
-        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:row; gap:0.25rem; z-index:2;">
-          ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
-          <button class="btn-info-icon" title="Course Info" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; transition:all 0.2s;">i</button>
+        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; z-index:2;">
+          <div style="display:flex; gap:0.25rem;">
+            ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
+            <button class="btn-info-icon" title="Course Info" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.75rem; transition:all 0.2s;">i</button>
+          </div>
           <button class="btn-preview-icon" title="Reset & Pick Sessions" data-code="${group.code}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.2); font-size:0.7rem; transition:all 0.2s;">👁</button>
         </div>
-        <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:84px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
+        <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:60px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
         <div class="course-meta" style="position:relative; z-index:1; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem; font-weight:500;">
           ${group.code}  ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
         </div>
@@ -1302,13 +1304,6 @@ window.openExamSchedule = function () {
   // Get all session objects that are in the schedule
   const scheduledSessions = allCourses.filter(c => scheduleIds.includes(c.id));
 
-  // HARD GUARD CLAUSE: If no specific sessions are picked onto the schedule table, there are strictly no exams.
-  if (scheduledSessions.length === 0) {
-    container.innerHTML = '<div style="grid-column: span 2; text-align: center;"><p style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No upcoming exams scheduled.<br>Add exams from the course settings.</p></div>';
-    document.getElementById('modal-exam-schedule').classList.remove('hidden');
-    return;
-  }
-
   // Only show exams for courses that have at least one session added to the schedule
   const myCodes = [...new Set(scheduledSessions.map(s => s.code))];
 
@@ -1317,8 +1312,6 @@ window.openExamSchedule = function () {
   myCodes.forEach(code => {
     const exams = window.api.getCourseExams(state.currentUniId, code);
     const sample = scheduledSessions.find(s => s.code === code);
-    if (!sample) return; // Paranoia check
-
     if (exams.moeda) examsList.push({ code, name: sample.name, type: 'Moed A', date: exams.moeda });
     if (exams.moedb) examsList.push({ code, name: sample.name, type: 'Moed B', date: exams.moedb });
   });
