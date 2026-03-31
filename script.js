@@ -1300,20 +1300,19 @@ window.openExamSchedule = function () {
   const container = document.getElementById('exam-schedule-list');
   const allCourses = window.api.getPublicCourses(state.currentUniId);
 
-  const scheduleIds = window.api.getPersonalSchedule(state.currentUser.id);
-  // Get all session objects that are in the schedule
-  const scheduledSessions = allCourses.filter(c => scheduleIds.includes(c.id));
-
-  // Only show exams for courses that have at least one session added to the schedule
-  const myCodes = [...new Set(scheduledSessions.map(s => s.code))];
+  // Use catalogCourseCodes — any course in the "My Courses" sidebar shows its exams
+  const myCodes = (state.catalogCourseCodes || []).slice();
 
   const examsList = [];
 
   myCodes.forEach(code => {
     const exams = window.api.getCourseExams(state.currentUniId, code);
-    const sample = scheduledSessions.find(s => s.code === code);
-    if (exams.moeda) examsList.push({ code, name: sample.name, type: 'Moed A', date: exams.moeda });
-    if (exams.moedb) examsList.push({ code, name: sample.name, type: 'Moed B', date: exams.moedb });
+    // Find the course name from allCourses
+    const sample = allCourses.find(c => c.code === code);
+    const courseName = sample ? sample.name : code;
+
+    if (exams.moeda) examsList.push({ code, name: courseName, type: 'Moed A', date: exams.moeda });
+    if (exams.moedb) examsList.push({ code, name: courseName, type: 'Moed B', date: exams.moedb });
   });
 
   const moedAList = examsList.filter(ex => ex.type === 'Moed A').sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -1336,19 +1335,19 @@ window.openExamSchedule = function () {
   };
 
   if (examsList.length === 0) {
-    container.innerHTML = '<div style="grid-column: span 2; text-align: center;"><p style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No upcoming exams scheduled.<br>Add exams from the course settings.</p></div>';
+    container.innerHTML = '<div style="grid-column: span 2; text-align: center;"><p style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No upcoming exams scheduled.<br>Add exams from the course info (i) button.</p></div>';
   } else {
-    const colBHtml = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
-      <h3 style="color:var(--text-muted); font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">Moed B</h3>
-      ${moedBList.length > 0 ? moedBList.map(renderExamCard).join('') : '<p style="font-size:0.85rem; color:var(--text-muted);">No Moed B exams scheduled.</p>'}
-    </div>`;
-
     const colAHtml = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
       <h3 style="color:var(--text-muted); font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">Moed A</h3>
       ${moedAList.length > 0 ? moedAList.map(renderExamCard).join('') : '<p style="font-size:0.85rem; color:var(--text-muted);">No Moed A exams scheduled.</p>'}
     </div>`;
 
-    container.innerHTML = colBHtml + colAHtml;
+    const colBHtml = `<div style="display:flex; flex-direction:column; gap:0.75rem;">
+      <h3 style="color:var(--text-muted); font-size:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">Moed B</h3>
+      ${moedBList.length > 0 ? moedBList.map(renderExamCard).join('') : '<p style="font-size:0.85rem; color:var(--text-muted);">No Moed B exams scheduled.</p>'}
+    </div>`;
+
+    container.innerHTML = colAHtml + colBHtml;
   }
 
   document.getElementById('modal-exam-schedule').classList.remove('hidden');
