@@ -27,7 +27,8 @@ const UNI_NAMES = {
   huji: 'Hebrew University of Jerusalem',
   tau: 'Tel Aviv University',
   bgu: 'Ben-Gurion University of the Negev',
-  haifa: 'University of Haifa'
+  haifa: 'University of Haifa',
+  technion: 'Technion – Israel Institute of Technology'
 };
 
 // DOM

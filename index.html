@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -58,7 +58,7 @@
             </div>
             <div class="hero-stats">
               <div class="hero-stat"><strong>10k+</strong><span>Students</span></div>
-              <div class="hero-stat"><strong>4</strong><span>Universities</span></div>
+              <div class="hero-stat"><strong>5</strong><span>Universities</span></div>
               <div class="hero-stat"><strong>100%</strong><span>Free</span></div>
             </div>
           </div>
@@ -150,6 +150,11 @@
             <h3>University of Haifa</h3>
             <p>Northern Israel's leading academic institution</p>
           </div>
+          <div class="uni-showcase-card">
+            <div class="uni-logo">🏛️</div>
+            <h3>Technion – Israel Institute of Technology</h3>
+            <p>Global leader in science, technology, and engineering</p>
+          </div>
         </div>
       </div>
 
@@ -176,6 +181,7 @@
           <button class="btn-guest-uni" onclick="confirmGuestUni('tau')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Tel Aviv University</button>
           <button class="btn-guest-uni" onclick="confirmGuestUni('bgu')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Ben-Gurion University of the Negev</button>
           <button class="btn-guest-uni" onclick="confirmGuestUni('haifa')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> University of Haifa</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('technion')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Technion – Israel Institute of Technology</button>
         </div>
         <button onclick="document.getElementById('modal-guest-uni').classList.add('hidden')" style="margin-top:1rem; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;">← Cancel</button>
       </div>
@@ -219,6 +225,7 @@
                   <option value="tau">Tel Aviv University</option>
                   <option value="bgu">Ben-Gurion University of the Negev</option>
                   <option value="haifa">University of Haifa</option>
+                  <option value="technion">Technion – Israel Institute of Technology</option>
                 </select>
               </div>
               <div class="form-group">
@@ -245,6 +252,7 @@
                 <option value="tau">Tel Aviv University</option>
                 <option value="bgu">Ben-Gurion University of the Negev</option>
                 <option value="haifa">University of Haifa</option>
+                <option value="technion">Technion – Israel Institute of Technology</option>
               </select>
             </div>
 
@@ -610,7 +618,7 @@
     </div>
   </div>
 
-  <script src="data.js?v=6"></script>
-  <script src="script.js?v=6"></script>
+  <script src="data.js?v=10"></script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>

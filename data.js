@@ -2,7 +2,8 @@ const initialUniversities = [
   { id: 'huji', name: 'Hebrew University of Jerusalem' },
   { id: 'tau', name: 'Tel Aviv University' },
   { id: 'bgu', name: 'Ben-Gurion University of the Negev' },
-  { id: 'haifa', name: 'University of Haifa' }
+  { id: 'haifa', name: 'University of Haifa' },
+  { id: 'technion', name: 'Technion – Israel Institute of Technology' }
 ];
 
 const DB_KEY = 'uniScheduleDB';

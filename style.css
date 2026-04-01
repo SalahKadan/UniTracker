@@ -321,11 +321,13 @@ nav:not(.navbar-landing) {
 
 /* University Showcase */
 .uni-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
   gap: 1.5rem;
 }
 .uni-showcase-card {
+  flex: 0 0 280px;
   background: rgba(26, 37, 64, 0.5);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.05);
