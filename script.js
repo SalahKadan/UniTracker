@@ -1092,8 +1092,8 @@ function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols =
   const widthPct = (100 / totalCols);
   const leftPct = (colIndex * widthPct);
 
-  return `<div class="course-block ${extraClass}" draggable="${!isPreview}"
-    ondragstart="${!isPreview ? `handleDragStartGlobal(event, '${safeId}', ${isCustom})` : 'event.preventDefault()'}"
+  return `<div class="course-block ${extraClass}" draggable="${!isPreview && isCustom}"
+    ondragstart="${(!isPreview && isCustom) ? `handleDragStartGlobal(event, '${safeId}', ${isCustom})` : 'event.preventDefault()'}"
     ondragend="handleDragEndGlobal(event)"
     onclick="${clickAction}"
     style="grid-column:${col}; grid-row:${rowStart} / span ${span};
