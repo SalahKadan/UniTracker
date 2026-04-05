@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniSchedule — Smart University Scheduling</title>
-  <meta name="description" content="Build your perfect university schedule. Multi-university academic scheduling platform with course management and approval workflows.">
+  <meta name="description"
+    content="Build your perfect university schedule. Multi-university academic scheduling platform with course management and approval workflows.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=13">
 </head>
+
 <body>
 
   <!-- ==================== TOP NAVBAR ==================== -->
@@ -18,7 +21,8 @@
     <div class="nav-links-landing">
       <a href="#features">Features</a>
       <a href="#universities">Universities</a>
-      <button class="btn-text" onclick="showView('auth')" style="font-weight: 500; font-size: 0.95rem; margin-right: 0.5rem;">Login / Sign Up</button>
+      <button class="btn-text" onclick="showView('auth')"
+        style="font-weight: 500; font-size: 0.95rem; margin-right: 0.5rem;">Login / Sign Up</button>
       <button class="btn-primary btn-glow" onclick="enterGuestMode()">Get Started</button>
     </div>
   </nav>
@@ -30,7 +34,8 @@
       <button class="btn-text" onclick="showView('student')">Schedule</button>
       <button class="btn-text" onclick="showView('todo')">To-Do List</button>
       <span id="nav-user-name"></span>
-      <button id="btn-auth-nav" class="btn-primary btn-glow hidden" onclick="showView('auth')" style="font-size:0.85rem; padding:0.4rem 1rem;">Register / Login</button>
+      <button id="btn-auth-nav" class="btn-primary btn-glow hidden" onclick="showView('auth')"
+        style="font-size:0.85rem; padding:0.4rem 1rem;">Register / Login</button>
       <button id="btn-logout" class="btn-outline hidden">Logout</button>
     </div>
   </nav>
@@ -45,16 +50,19 @@
         <div class="hero-orb orb-1"></div>
         <div class="hero-orb orb-2"></div>
         <div class="hero-orb orb-3"></div>
-        
+
         <div class="hero-container">
           <div class="hero-content">
             <span class="hero-badge">🎓 Built for modern students • By Salah Al-Din Kaadan</span>
             <h1>Organize your week<br>with <span class="gradient-text">UniSchedule</span></h1>
-            <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple universities, and create the perfect balance between studies and your personal life.</p>
+            <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple
+              universities, and create the perfect balance between studies and your personal life.</p>
             <div class="hero-actions">
               <button class="btn-outline btn-lg" onclick="showView('auth')">Login / Sign Up</button>
               <button class="btn-primary btn-lg btn-glow" onclick="enterGuestMode()">Get Started for Free</button>
-              <button class="btn-text btn-lg" style="opacity: 0.8;" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
+              <button class="btn-text btn-lg" style="opacity: 0.8;"
+                onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features
+                ↓</button>
             </div>
             <div class="hero-stats">
               <div class="hero-stat"><strong>10k+</strong><span>Students</span></div>
@@ -62,7 +70,7 @@
               <div class="hero-stat"><strong>100%</strong><span>Free</span></div>
             </div>
           </div>
-          
+
           <div class="hero-visual">
             <div class="mockup-window">
               <div class="mockup-header">
@@ -77,8 +85,10 @@
                   <div class="mockup-card"></div>
                 </div>
                 <div class="mockup-grid">
-                  <div class="mockup-event bg-blue floating" style="animation-delay: 0s; grid-area: 2/2/4/3;">CS101</div>
-                  <div class="mockup-event bg-purple floating" style="animation-delay: 0.5s; grid-area: 3/4/6/5;">MATH</div>
+                  <div class="mockup-event bg-blue floating" style="animation-delay: 0s; grid-area: 2/2/4/3;">CS101
+                  </div>
+                  <div class="mockup-event bg-purple floating" style="animation-delay: 0.5s; grid-area: 3/4/6/5;">MATH
+                  </div>
                   <div class="mockup-event bg-green floating" style="animation-delay: 1s; grid-area: 1/3/3/4;">Gym</div>
                 </div>
               </div>
@@ -105,7 +115,8 @@
           <div class="feature-card">
             <div class="feature-icon">⚡</div>
             <h3>Unified Creation</h3>
-            <p>Directly create and add courses to the global catalog and your schedule without waiting for admin approval.</p>
+            <p>Directly create and add courses to the global catalog and your schedule without waiting for admin
+              approval.</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">🎨</div>
@@ -128,7 +139,8 @@
       <!-- Universities -->
       <div class="section section-dark" id="universities">
         <h2 class="section-title">Supported Universities</h2>
-        <p class="section-subtitle">Select your university when you sign up and get instant access to your course catalog.</p>
+        <p class="section-subtitle">Select your university when you sign up and get instant access to your course
+          catalog.</p>
         <div class="uni-grid" id="uni-showcase">
           <div class="uni-showcase-card">
             <div class="uni-logo">🏛️</div>
@@ -175,15 +187,30 @@
     <div id="modal-guest-uni" class="modal-overlay hidden">
       <div class="card" style="max-width:480px; width:90%; padding:2rem; animation: slideUp 0.3s ease;">
         <h2 style="margin-bottom:0.25rem;">Choose Your University</h2>
-        <p style="color:var(--text-muted); margin-bottom:1.5rem; font-size:0.9rem;">You're entering as a <strong>Guest</strong>. Your data will be saved locally on this device. You can register anytime to sync across devices.</p>
+        <p style="color:var(--text-muted); margin-bottom:1.5rem; font-size:0.9rem;">You're entering as a
+          <strong>Guest</strong>. Your data will be saved locally on this device. You can register anytime to sync
+          across devices.
+        </p>
         <div style="display:flex; flex-direction:column; gap:0.75rem;">
-          <button class="btn-guest-uni" onclick="confirmGuestUni('huji')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Hebrew University of Jerusalem</button>
-          <button class="btn-guest-uni" onclick="confirmGuestUni('tau')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Tel Aviv University</button>
-          <button class="btn-guest-uni" onclick="confirmGuestUni('bgu')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Ben-Gurion University of the Negev</button>
-          <button class="btn-guest-uni" onclick="confirmGuestUni('haifa')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> University of Haifa</button>
-          <button class="btn-guest-uni" onclick="confirmGuestUni('technion')" style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span style='font-size:1.5rem;'>🏛️</span> Technion – Israel Institute of Technology</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('huji')"
+            style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span
+              style='font-size:1.5rem;'>🏛️</span> Hebrew University of Jerusalem</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('tau')"
+            style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span
+              style='font-size:1.5rem;'>🏛️</span> Tel Aviv University</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('bgu')"
+            style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span
+              style='font-size:1.5rem;'>🏛️</span> Ben-Gurion University of the Negev</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('haifa')"
+            style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span
+              style='font-size:1.5rem;'>🏛️</span> University of Haifa</button>
+          <button class="btn-guest-uni" onclick="confirmGuestUni('technion')"
+            style="padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--surface-2); color:var(--text-light); cursor:pointer; font-size:1rem; font-weight:600; transition:all 0.2s; text-align:left; display:flex; align-items:center; gap:0.75rem;"><span
+              style='font-size:1.5rem;'>🏛️</span> Technion – Israel Institute of Technology</button>
         </div>
-        <button onclick="document.getElementById('modal-guest-uni').classList.add('hidden')" style="margin-top:1rem; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;">← Cancel</button>
+        <button onclick="document.getElementById('modal-guest-uni').classList.add('hidden')"
+          style="margin-top:1rem; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;">←
+          Cancel</button>
       </div>
     </div>
 
@@ -256,7 +283,8 @@
               </select>
             </div>
 
-            <button type="submit" class="btn-primary btn-glow" id="btn-auth-submit" style="width:100%; padding:0.8rem; font-size:1rem; font-weight:600; margin-top:0.5rem;">Login</button>
+            <button type="submit" class="btn-primary btn-glow" id="btn-auth-submit"
+              style="width:100%; padding:0.8rem; font-size:1rem; font-weight:600; margin-top:0.5rem;">Login</button>
           </form>
           <p class="auth-toggle">
             <span id="auth-toggle-text">Don't have an account?</span>
@@ -272,16 +300,22 @@
         <aside class="sidebar">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <h3 style="margin: 0;">My Courses</h3>
-            <button id="btn-open-exam-schedule" class="btn-outline" style="border-color: var(--warning); color: var(--warning); padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="openExamSchedule()">Exam Schedule</button>
+            <button id="btn-open-exam-schedule" class="btn-outline"
+              style="border-color: var(--warning); color: var(--warning); padding: 0.2rem 0.6rem; font-size: 0.75rem;"
+              onclick="openExamSchedule()">Exam Schedule</button>
           </div>
           <div class="search-box" style="position:relative;">
             <input type="text" id="course-search" placeholder="Search to add courses..." autocomplete="off">
-            <div id="search-results-dropdown" class="card hidden" style="position:absolute; top:100%; left:0; width:100%; margin-top:0.25rem; z-index:100; max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding:0.5rem;"></div>
+            <div id="search-results-dropdown" class="card hidden"
+              style="position:absolute; top:100%; left:0; width:100%; margin-top:0.25rem; z-index:100; max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding:0.5rem;">
+            </div>
           </div>
           <div id="public-courses-list" class="courses-list mt-1"></div>
           <div style="display: flex; gap: 0.5rem; margin-top: 1rem; margin-bottom: 0.5rem;">
-            <button id="btn-open-custom-modal" class="btn-primary" style="flex: 1; padding: 0.6rem; font-size: 0.8rem;">Add Personal Event</button>
-            <button id="btn-open-request-modal" class="btn-secondary" style="flex: 1; padding: 0.6rem; font-size: 0.8rem;">Create New Custom Course</button>
+            <button id="btn-open-custom-modal" class="btn-primary"
+              style="flex: 1; padding: 0.6rem; font-size: 0.8rem;">Add Personal Event</button>
+            <button id="btn-open-request-modal" class="btn-secondary"
+              style="flex: 1; padding: 0.6rem; font-size: 0.8rem;">Create New Custom Course</button>
           </div>
         </aside>
         <div class="main-content">
@@ -304,7 +338,8 @@
             <h2>Task Manager</h2>
             <div class="tm-stats" id="tm-stats">0 active · 0 completed</div>
           </div>
-          <button id="btn-toggle-task-form" class="btn-primary" style="background:var(--primary); font-weight:600; border-radius:8px;">+ New Task</button>
+          <button id="btn-toggle-task-form" class="btn-primary"
+            style="background:var(--primary); font-weight:600; border-radius:8px;">+ New Task</button>
         </div>
 
         <!-- Create Form (Inline) -->
@@ -334,8 +369,11 @@
               </div>
             </div>
             <div style="display:flex; gap:1rem; margin-top:1rem;">
-              <button type="submit" class="btn-primary" style="background:var(--primary); font-weight:600; padding:0.6rem 1.5rem; border-radius:8px;">✓ Create</button>
-              <button type="button" id="btn-cancel-task" class="btn-secondary" style="background: rgba(255,255,255,0.05); padding:0.6rem 1.5rem; border-radius:8px;">✕ Cancel</button>
+              <button type="submit" class="btn-primary"
+                style="background:var(--primary); font-weight:600; padding:0.6rem 1.5rem; border-radius:8px;">✓
+                Create</button>
+              <button type="button" id="btn-cancel-task" class="btn-secondary"
+                style="background: rgba(255,255,255,0.05); padding:0.6rem 1.5rem; border-radius:8px;">✕ Cancel</button>
             </div>
           </form>
         </div>
@@ -343,7 +381,10 @@
         <!-- Filters Bar -->
         <div class="tm-filters-bar">
           <div class="tm-filters-left">
-            <span style="color:var(--text-muted); font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg> Filter:</span>
+            <span style="color:var(--text-muted); font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;"><svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+              </svg> Filter:</span>
             <select id="filter-status" class="tm-select">
               <option value="all">All Status</option>
               <option value="pending">Active</option>
@@ -355,7 +396,9 @@
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
-            <input type="text" id="filter-course" class="tm-select" style="background-image:none; padding-right:1rem; cursor:text; width: 140px;" placeholder="Search Course...">
+            <input type="text" id="filter-course" class="tm-select"
+              style="background-image:none; padding-right:1rem; cursor:text; width: 140px;"
+              placeholder="Search Course...">
           </div>
           <div class="tm-filters-right">
             <span style="color:var(--text-muted); font-size:0.9rem;">↑↓</span>
@@ -409,10 +452,12 @@
           <div class="form-group"><label>Start Time</label><input type="time" id="req-start" required></div>
           <div class="form-group"><label>End Time</label><input type="time" id="req-end" required></div>
           <div class="form-group"><label>Group Number</label><input type="text" id="req-group"></div>
-          <div class="form-group"><label>Credits</label><input type="number" id="req-credits" min="0" max="20" step="0.5" placeholder="e.g. 3.5"></div>
+          <div class="form-group"><label>Credits</label><input type="number" id="req-credits" min="0" max="20"
+              step="0.5" placeholder="e.g. 3.5"></div>
           <div class="form-group"><label>Moed A (optional)</label><input type="date" id="req-moeda"></div>
           <div class="form-group"><label>Moed B (optional)</label><input type="date" id="req-moedb"></div>
-          <div class="form-group" style="grid-column: span 2;"><label>Notes (optional)</label><textarea id="req-notes" rows="2"></textarea></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Notes (optional)</label><textarea id="req-notes"
+              rows="2"></textarea></div>
         </div>
         <button type="submit" class="btn-primary mt-1" style="width: 100%;">Create Course</button>
       </form>
@@ -428,7 +473,8 @@
       <h2>Add Custom Event</h2>
       <form id="form-custom-event">
         <div class="form-grid">
-          <div class="form-group" style="grid-column: span 2;"><label>Event Title</label><input type="text" id="cust-title" placeholder="e.g. Gym, Study Session" required></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Event Title</label><input type="text"
+              id="cust-title" placeholder="e.g. Gym, Study Session" required></div>
           <div class="form-group" style="grid-column: span 2;">
             <label>Day</label>
             <select id="cust-day">
@@ -441,7 +487,8 @@
           </div>
           <div class="form-group"><label>Start Time</label><input type="time" id="cust-start" required></div>
           <div class="form-group"><label>End Time</label><input type="time" id="cust-end" required></div>
-          <div class="form-group" style="grid-column: span 2;"><label>Location / Details</label><input type="text" id="cust-notes"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Location / Details</label><input type="text"
+              id="cust-notes"></div>
         </div>
         <button type="submit" class="btn-primary mt-1" style="width: 100%;">Add Event</button>
       </form>
@@ -473,12 +520,15 @@
           </div>
           <div class="form-group"><label>Start Time</label><input type="time" id="edit-start" required></div>
           <div class="form-group"><label>End Time</label><input type="time" id="edit-end" required></div>
-          <div class="form-group" style="grid-column: span 2;"><label>Location / Room</label><input type="text" id="edit-room"></div>
-          <div class="form-group" style="grid-column: span 2;"><label>Details / Notes</label><input type="text" id="edit-notes"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Location / Room</label><input type="text"
+              id="edit-room"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Details / Notes</label><input type="text"
+              id="edit-notes"></div>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn-primary" style="flex: 1;">Save Changes</button>
-          <button type="button" class="btn-danger" id="btn-delete-event" style="flex: 1; border: none; border-radius: var(--radius); font-weight: 600;">Remove</button>
+          <button type="button" class="btn-danger" id="btn-delete-event"
+            style="flex: 1; border: none; border-radius: var(--radius); font-weight: 600;">Remove</button>
         </div>
       </form>
     </div>
@@ -490,7 +540,7 @@
       <span class="close-modal" id="close-info-modal">&times;</span>
       <h2 id="info-title" style="margin-bottom:0.25rem;">Course Name</h2>
       <p id="info-code" style="color:var(--primary); font-weight:600; margin-bottom:1rem;">CODE101</p>
-      
+
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; font-size:0.9rem;">
         <div><strong>Faculty:</strong><br><span id="info-faculty" style="color:var(--text-muted);">---</span></div>
         <div><strong>Credits:</strong><br><span id="info-credits" style="color:var(--text-muted);">---</span></div>
@@ -502,24 +552,30 @@
           <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Description</h4>
           <button id="btn-edit-description" class="btn-text" style="font-size:0.75rem; padding:0;">Edit</button>
         </div>
-        <p id="info-description" style="font-size:0.85rem; color:var(--text-muted); background:var(--surface-2); padding:0.75rem; border-radius:8px; margin:0;">No description available.</p>
-        <textarea id="info-description-input" class="hidden" style="width:100%; border-radius:8px; padding:0.75rem; font-size:0.85rem; background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); min-height:80px; margin-bottom:0.5rem;"></textarea>
-        <button id="btn-save-description" class="btn-secondary hidden" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Save Description</button>
+        <p id="info-description"
+          style="font-size:0.85rem; color:var(--text-muted); background:var(--surface-2); padding:0.75rem; border-radius:8px; margin:0;">
+          No description available.</p>
+        <textarea id="info-description-input" class="hidden"
+          style="width:100%; border-radius:8px; padding:0.75rem; font-size:0.85rem; background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); min-height:80px; margin-bottom:0.5rem;"></textarea>
+        <button id="btn-save-description" class="btn-secondary hidden"
+          style="font-size:0.75rem; padding:0.4rem 0.8rem;">Save Description</button>
       </div>
 
       <!-- Course Sessions & Times -->
       <div style="margin-bottom:1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
           <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Sessions & Times (Global)</h4>
-          <button id="btn-add-global-session" class="btn-text" style="font-size:0.75rem; padding:0; color:var(--primary);">+ Add Session</button>
+          <button id="btn-add-global-session" class="btn-text"
+            style="font-size:0.75rem; padding:0; color:var(--primary);">+ Add Session</button>
         </div>
         <div id="info-sessions-container" style="display:flex; flex-direction:column; gap:0.5rem;">
           <!-- dynamically rendered sessions here -->
         </div>
       </div>
-      
+
       <!-- Student Rating Header -->
-      <div style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:0.75rem; border-radius:8px;">
+      <div
+        style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:0.75rem; border-radius:8px;">
         <div>
           <h4 style="font-size:0.9rem; color:var(--text-light); margin-bottom:0.2rem;">Student Rating</h4>
           <span style="font-size:0.8rem; color:var(--text-muted);" id="info-feedback-count">0 Reviews</span>
@@ -533,13 +589,17 @@
       <div style="margin-bottom:1.5rem;">
         <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem; align-items:center;">
           <h4 style="font-size:0.9rem; color:var(--text-light); margin:0;">Reviews</h4>
-          <button id="btn-write-review" class="btn-primary" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Write a Review</button>
+          <button id="btn-write-review" class="btn-primary" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Write a
+            Review</button>
         </div>
-        
-        <div id="review-form-container" class="hidden" style="background:var(--surface-2); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border);">
+
+        <div id="review-form-container" class="hidden"
+          style="background:var(--surface-2); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border);">
           <div style="margin-bottom:0.5rem;">
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your Rating (1-5 Stars)</label>
-            <select id="review-rating" style="width:100%; padding:0.4rem; background:var(--bg-color); color:var(--text-main); border:1px solid var(--border); border-radius:6px;">
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your Rating
+              (1-5 Stars)</label>
+            <select id="review-rating"
+              style="width:100%; padding:0.4rem; background:var(--bg-color); color:var(--text-main); border:1px solid var(--border); border-radius:6px;">
               <option value="5">5 - Excellent</option>
               <option value="4">4 - Good</option>
               <option value="3">3 - Average</option>
@@ -548,17 +608,21 @@
             </select>
           </div>
           <div style="margin-bottom:0.5rem;">
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your Feedback</label>
-            <textarea id="review-text" placeholder="Share your experience with this course..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem; min-height:60px;"></textarea>
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Your
+              Feedback</label>
+            <textarea id="review-text" placeholder="Share your experience with this course..."
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem; min-height:60px;"></textarea>
           </div>
           <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem;">
             <button id="btn-cancel-review" type="button" class="btn-text" style="font-size:0.75rem;">Cancel</button>
-            <button id="btn-submit-review" type="button" class="btn-success" style="font-size:0.8rem; padding:0.4rem 1rem;">Post Review</button>
+            <button id="btn-submit-review" type="button" class="btn-success"
+              style="font-size:0.8rem; padding:0.4rem 1rem;">Post Review</button>
           </div>
         </div>
 
         <!-- List of existing reviews -->
-        <div id="info-feedbacks-list" style="display:flex; flex-direction:column; gap:0.75rem; max-height:200px; overflow-y:auto; padding-right:0.5rem;">
+        <div id="info-feedbacks-list"
+          style="display:flex; flex-direction:column; gap:0.75rem; max-height:200px; overflow-y:auto; padding-right:0.5rem;">
           <!-- Reviews will be injected here -->
         </div>
       </div>
@@ -569,13 +633,16 @@
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
           <div class="link-editor">
             <label style="font-size:0.8rem; color:var(--text-muted);">Moed A</label>
-            <input type="date" id="info-exam-moeda" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+            <input type="date" id="info-exam-moeda"
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
           </div>
           <div class="link-editor">
             <label style="font-size:0.8rem; color:var(--text-muted);">Moed B</label>
-            <input type="date" id="info-exam-moedb" style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+            <input type="date" id="info-exam-moedb"
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
           </div>
-          <button id="btn-save-exams" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save Exams</button>
+          <button id="btn-save-exams" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save
+            Exams</button>
         </div>
       </div>
 
@@ -585,24 +652,31 @@
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
           <div class="link-editor">
             <label style="font-size:0.8rem; color:var(--text-muted);">WhatsApp Group</label>
-            <input type="text" id="info-link-wa" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+            <input type="text" id="info-link-wa" placeholder="Paste link here..."
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
           </div>
           <div class="link-editor">
             <label style="font-size:0.8rem; color:var(--text-muted);">Recorded Materials (חומר מוקלט)</label>
-            <input type="text" id="info-link-rec" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+            <input type="text" id="info-link-rec" placeholder="Paste link here..."
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
           </div>
           <div class="link-editor">
             <label style="font-size:0.8rem; color:var(--text-muted);">Past Exams</label>
-            <input type="text" id="info-link-exams" placeholder="Paste link here..." style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
+            <input type="text" id="info-link-exams" placeholder="Paste link here..."
+              style="width:100%; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:var(--bg-color); color:#fff; font-size:0.85rem;">
           </div>
-          <button id="btn-save-links" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save Links</button>
+          <button id="btn-save-links" class="btn-secondary" style="margin-top:0.5rem; font-size:0.85rem;">Save
+            Links</button>
         </div>
       </div>
-      
+
       <!-- Action Buttons -->
       <div style="display:flex; gap:1rem;">
-        <button id="btn-remove-course-schedule" class="btn-outline" style="flex:1; border-color:var(--danger); color:var(--danger); font-size:0.85rem;">Remove from Schedule</button>
-        <button id="btn-delete-course-global" class="btn-danger" style="flex:1; font-size:0.85rem; padding: 0.5rem;">Delete from Catalog</button>
+        <button id="btn-remove-course-schedule" class="btn-outline"
+          style="flex:1; border-color:var(--danger); color:var(--danger); font-size:0.85rem;">Remove from
+          Schedule</button>
+        <button id="btn-delete-course-global" class="btn-danger"
+          style="flex:1; font-size:0.85rem; padding: 0.5rem;">Delete from Catalog</button>
       </div>
     </div>
   </div>
@@ -610,9 +684,11 @@
   <!-- Exam Schedule Modal -->
   <div id="modal-exam-schedule" class="modal hidden">
     <div class="modal-content card" style="max-width:800px; width: 95%;">
-      <span class="close-modal" id="close-exam-schedule-modal" onclick="document.getElementById('modal-exam-schedule').classList.add('hidden')">&times;</span>
+      <span class="close-modal" id="close-exam-schedule-modal"
+        onclick="document.getElementById('modal-exam-schedule').classList.add('hidden')">&times;</span>
       <h2 style="margin-bottom:1rem;">Exam Schedule (לוח מבחנים)</h2>
-      <div id="exam-schedule-list" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; max-height:600px; overflow-y:auto; padding-right:0.5rem;">
+      <div id="exam-schedule-list"
+        style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; max-height:600px; overflow-y:auto; padding-right:0.5rem;">
         <!-- Exams injected here -->
       </div>
     </div>
@@ -620,5 +696,7 @@
 
   <script src="data.js?v=13"></script>
   <script src="script.js?v=13"></script>
+
 </body>
+
 </html>
