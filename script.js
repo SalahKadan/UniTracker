@@ -1886,10 +1886,13 @@ function attachProgressCardListeners() {
       const cell = e.target.closest('.sp-cell');
 
       let progress;
+      let structure;
       if (isPublic) {
         progress = window.api.getUserProgress(state.currentUser.id, state.currentUniId, courseId);
+        structure = window.api.getCourseStructure(state.currentUniId, courseId);
       } else {
         progress = window.api.getCustomCourseProgress(state.currentUser.id, courseId);
+        structure = window.api.getCustomCourseStructure(state.currentUser.id, courseId);
       }
 
       if (e.target.checked) {
@@ -1909,8 +1912,48 @@ function attachProgressCardListeners() {
         window.api.saveCustomCourseProgress(state.currentUser.id, courseId, progress);
       }
 
-      // Update stats without full re-render for performance
-      renderProgressCards();
+      // Surgically Update local DOM stats without re-rendering card entirely
+      const card = cell.closest('.sp-card');
+      
+      // 1. Update checking row (e.g., 5/13)
+      const row = cell.closest('.sp-row');
+      if (row) {
+        const countLabel = row.querySelector('.sp-row-count');
+        const countStruct = structure[type] || 0;
+        const rowCount = Math.min(progress[type].length, countStruct);
+        if (countLabel) countLabel.textContent = `${rowCount}/${countStruct}`;
+      }
+
+      // 2. Update Card total pct and bar
+      const totalItems = (structure.lectures || 0) + (structure.tutorials || 0) + (structure.homeworks || 0);
+      const completedItems = Math.min(progress.lectures.length, structure.lectures || 0)
+        + Math.min(progress.tutorials.length, structure.tutorials || 0)
+        + Math.min(progress.homeworks.length, structure.homeworks || 0);
+      const pct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+      
+      const pctLabel = card.querySelector('.sp-card-pct');
+      if (pctLabel) pctLabel.textContent = `${pct}%`;
+      
+      const barFill = card.querySelector('.sp-card-bar-fill');
+      if (barFill) barFill.style.width = `${pct}%`;
+
+      // 3. Update the specific stats pills dynamically
+      const lecturesDone = Math.min(progress.lectures.length, structure.lectures || 0);
+      const tutsDone = Math.min(progress.tutorials.length, structure.tutorials || 0);
+      const hwDone = Math.min(progress.homeworks.length, structure.homeworks || 0);
+
+      const computedColor = card.style.getPropertyValue('--card-color').trim() || '#3b82f6';
+      const statsDiv = card.querySelector('.sp-card-stats');
+
+      if (statsDiv) {
+        let statsHtml = '';
+        if (structure.lectures > 0) statsHtml += `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:${computedColor}"></span>${lecturesDone}/${structure.lectures} lectures</span>`;
+        if (structure.tutorials > 0) statsHtml += `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:${computedColor}"></span>${tutsDone}/${structure.tutorials} tutorials</span>`;
+        if (structure.homeworks > 0) statsHtml += `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:#f59e0b"></span>${hwDone}/${structure.homeworks} homeworks</span>`;
+        statsDiv.innerHTML = statsHtml;
+      }
+
+      // Update global ring stats
       updateOverallSummary();
     });
   });
