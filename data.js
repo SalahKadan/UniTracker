@@ -69,6 +69,25 @@ class DataStore {
     return this.db.users.find(u => u.id === userId) || null;
   }
 
+  updateUser(userId, updatedData) {
+    const idx = this.db.users.findIndex(u => u.id === userId);
+    if (idx === -1) return false;
+    // Merge updated fields
+    Object.assign(this.db.users[idx], updatedData);
+    this.saveData();
+    return true;
+  }
+
+  deleteUser(userId) {
+    this.db.users = this.db.users.filter(u => u.id !== userId);
+    delete this.db.schedules[userId];
+    // Clean up user-related data
+    this.db.todos = (this.db.todos || []).filter(t => t.userId !== userId);
+    this.db.customEvents = (this.db.customEvents || []).filter(e => e.userId !== userId);
+    this.saveData();
+    return true;
+  }
+
   signup(username, password, uniId, extras = {}) {
     if (this.db.users.find(u => u.username === username)) {
       return { success: false, error: 'Username already exists' };

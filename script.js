@@ -38,7 +38,8 @@ const views = {
   student: document.getElementById('view-student'),
   todo: document.getElementById('view-todo'),
   progress: document.getElementById('view-progress'),
-  gpa: document.getElementById('view-gpa')
+  gpa: document.getElementById('view-gpa'),
+  profile: document.getElementById('view-profile')
 };
 const navbar = document.getElementById('navbar');
 const navbarLanding = document.getElementById('navbar-landing');
@@ -190,6 +191,8 @@ function showView(viewId) {
     renderSemesterProgress();
   } else if (viewId === 'gpa' && state.currentUser) {
     renderGpaCalculator();
+  } else if (viewId === 'profile' && state.currentUser) {
+    renderProfilePage();
   }
 
   // Scroll to top on view change
@@ -2505,4 +2508,307 @@ function initMockupCarousel() {
   });
 
   startTimer();
+}
+
+// ==================== USER PROFILE ====================
+function renderProfilePage() {
+  if (!state.currentUser) return;
+
+  // Identity
+  const username = state.isGuest ? 'Guest' : (state.currentUser.username || 'User');
+  const email = state.currentUser.email || (state.isGuest ? 'guest@unitracker.local' : '—');
+  
+  document.getElementById('profile-username').textContent = username;
+  document.getElementById('profile-email').textContent = email;
+
+  // Avatar initials
+  const avatarEl = document.getElementById('profile-avatar');
+  if (!state.isGuest && username.length > 0) {
+    const initials = username.charAt(0).toUpperCase();
+    avatarEl.innerHTML = `<span style="font-size:1.8rem; font-weight:800; font-family:'Outfit',sans-serif;">${initials}</span>`;
+  }
+
+  // Pre-fill edit form
+  document.getElementById('edit-profile-username').value = state.isGuest ? '' : username;
+  document.getElementById('edit-profile-email').value = state.isGuest ? '' : email;
+
+  // Academic stats
+  const courses = typeof getGpaCoursesList === 'function' ? getGpaCoursesList() : [];
+  const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
+  
+  let totalCredits = 0;
+  let earnedCredits = 0;
+  let gpaCredits = 0;
+  let sumGrade = 0;
+
+  courses.forEach(c => {
+    const data = gradesData[c.id] || {};
+    const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
+    const grade = data.grade;
+    const type = data.type || 'numeric';
+
+    totalCredits += cred;
+
+    if (grade !== undefined && grade !== null && grade !== '') {
+      if (type === 'numeric') {
+        const numGrade = parseFloat(grade);
+        if (!isNaN(numGrade)) {
+          gpaCredits += cred;
+          sumGrade += numGrade * cred;
+          if (numGrade >= 55) earnedCredits += cred;
+        }
+      } else if (type === 'binary') {
+        if (grade === 'pass') earnedCredits += cred;
+      }
+    }
+  });
+
+  document.getElementById('profile-total-credits').textContent = totalCredits;
+  document.getElementById('profile-active-courses').textContent = courses.length;
+
+  // Calculate Semester Progress
+  const tracked = getTrackedCourses();
+  let totalLec = 0, doneLec = 0, totalTut = 0, doneTut = 0, totalHw = 0, doneHw = 0;
+
+  tracked.forEach(entry => {
+    let structure, progress;
+    if (entry.type === 'public') {
+      structure = window.api.getCourseStructure(state.currentUniId, entry.code);
+      progress = window.api.getUserProgress(state.currentUser.id, state.currentUniId, entry.code);
+    } else {
+      structure = window.api.getCustomCourseStructure(state.currentUser.id, entry.id);
+      progress = window.api.getCustomCourseProgress(state.currentUser.id, entry.id);
+    }
+    totalLec += structure.lectures || 0;
+    totalTut += structure.tutorials || 0;
+    totalHw += structure.homeworks || 0;
+    doneLec += Math.min(progress.lectures.length, structure.lectures || 0);
+    doneTut += Math.min(progress.tutorials.length, structure.tutorials || 0);
+    doneHw += Math.min(progress.homeworks.length, structure.homeworks || 0);
+  });
+
+  const totalAll = totalLec + totalTut + totalHw;
+  const doneAll = doneLec + doneTut + doneHw;
+  const pct = totalAll > 0 ? Math.round((doneAll / totalAll) * 100) : 0;
+  document.getElementById('profile-progress-pct').textContent = `${pct}%`;
+
+  // Calculate Active Tasks
+  let activeTodos = 0;
+  if (state.currentUser) {
+    const todos = window.api.getTodos ? window.api.getTodos(state.currentUser.id) : (JSON.parse(localStorage.getItem('unitracker_todos') || '[]').filter(t => t.userId === state.currentUser.id));
+    activeTodos = todos.filter(t => !t.completed).length;
+  }
+  document.getElementById('profile-active-todos').textContent = activeTodos;
+}
+
+function toggleEditProfile() {
+  const form = document.getElementById('profile-edit-form');
+  form.classList.toggle('hidden');
+}
+
+function saveProfileChanges() {
+  if (!state.currentUser || state.isGuest) {
+    alert('Guest accounts cannot edit profile details. Please register first.');
+    return;
+  }
+
+  const newUsername = document.getElementById('edit-profile-username').value.trim();
+  const newEmail = document.getElementById('edit-profile-email').value.trim();
+  const newPass = document.getElementById('edit-profile-password').value;
+  const confirmPass = document.getElementById('edit-profile-password-confirm').value;
+
+  if (!newUsername) { alert('Username cannot be empty.'); return; }
+
+  if (newPass && newPass !== confirmPass) {
+    alert('Passwords do not match.');
+    return;
+  }
+
+  // Update user data
+  const userData = window.api.getUser(state.currentUser.id);
+  if (userData) {
+    userData.username = newUsername;
+    if (newEmail) userData.email = newEmail;
+    if (newPass) userData.password = newPass;
+    window.api.updateUser(state.currentUser.id, userData);
+    state.currentUser = userData;
+  }
+
+  // Clear password fields
+  document.getElementById('edit-profile-password').value = '';
+  document.getElementById('edit-profile-password-confirm').value = '';
+
+  // Re-render
+  toggleEditProfile();
+  renderProfilePage();
+
+  // Update navbar username
+  document.getElementById('nav-user-name').textContent = newUsername;
+}
+
+function profileLogout() {
+  state.currentUser = null;
+  state.currentUniId = null;
+  state.authMode = 'login';
+  state.isGuest = false;
+  state.catalogCourseCodes = [];
+  state.previewCourseCodes = [];
+  localStorage.removeItem('uniSchedule_session');
+  localStorage.removeItem('uniSchedule_guestUni');
+  localStorage.removeItem('uniSchedule_catalogCodes');
+  const authForm = document.getElementById('auth-form');
+  if (authForm) authForm.reset();
+  showView('welcome');
+}
+
+function showDeleteAccountModal() {
+  if (state.isGuest) {
+    alert('Guest accounts cannot be deleted. Simply clear your data or close the browser.');
+    return;
+  }
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('modal-delete-account').classList.remove('hidden');
+}
+
+function confirmDeleteAccount() {
+  const input = document.getElementById('delete-confirm-input').value.trim();
+  const expected = state.currentUser ? state.currentUser.username : '';
+
+  if (input !== expected) {
+    alert('Username does not match. Deletion cancelled.');
+    return;
+  }
+
+  // Delete user data
+  if (window.api.deleteUser) {
+    window.api.deleteUser(state.currentUser.id);
+  }
+
+  // Clear all localStorage keys related to user
+  const userId = state.currentUser.id;
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.includes(userId) || key.startsWith('uniSchedule_'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  document.getElementById('modal-delete-account').classList.add('hidden');
+
+  state.currentUser = null;
+  state.currentUniId = null;
+  state.isGuest = false;
+  state.catalogCourseCodes = [];
+  state.previewCourseCodes = [];
+
+  showView('welcome');
+}
+
+function showChangePasswordModal() {
+  if (state.isGuest) {
+    alert('Guest accounts cannot change passwords. Please register first.');
+    return;
+  }
+  // Show the edit form and focus on password field
+  const form = document.getElementById('profile-edit-form');
+  if (form.classList.contains('hidden')) {
+    form.classList.remove('hidden');
+  }
+  setTimeout(() => {
+    document.getElementById('edit-profile-password').focus();
+  }, 100);
+}
+
+function openFeedbackModal(type) {
+  const titles = {
+    bug: '🐛 Report a Bug',
+    feature: '💡 Suggest a Feature',
+    feedback: '💬 Send Feedback'
+  };
+  const descs = {
+    bug: 'Describe the issue you encountered. Include steps to reproduce if possible.',
+    feature: 'Tell us about the feature you\'d like to see in UniTracker.',
+    feedback: 'Share your thoughts, suggestions, or general feedback about the app.'
+  };
+
+  document.getElementById('feedback-modal-title').textContent = titles[type] || 'Send Feedback';
+  document.getElementById('feedback-modal-desc').textContent = descs[type] || '';
+  document.getElementById('feedback-subject').value = '';
+  document.getElementById('feedback-details').value = '';
+  document.getElementById('modal-feedback').classList.remove('hidden');
+}
+
+function submitFeedback(e) {
+  e.preventDefault();
+  const subject = document.getElementById('feedback-subject').value.trim();
+  const details = document.getElementById('feedback-details').value.trim();
+  
+  if (!subject || !details) return;
+
+  // Store feedback in localStorage
+  const feedbackList = JSON.parse(localStorage.getItem('unitracker_feedback') || '[]');
+  feedbackList.push({
+    subject,
+    details,
+    user: state.currentUser ? state.currentUser.username : 'Guest',
+    timestamp: new Date().toISOString()
+  });
+  localStorage.setItem('unitracker_feedback', JSON.stringify(feedbackList));
+
+  document.getElementById('modal-feedback').classList.add('hidden');
+  document.getElementById('form-feedback').reset();
+
+  // Show success toast
+  showProfileToast('✅ Thank you! Your feedback has been submitted.');
+}
+
+function showClearDataConfirm() {
+  document.getElementById('modal-clear-data').classList.remove('hidden');
+}
+
+function confirmClearAllData() {
+  if (!state.currentUser) return;
+
+  const userId = state.currentUser.id;
+  
+  // Clear all user-specific data
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.includes(userId) && !key.includes('uniSchedule_session')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  // Clear catalog state
+  state.catalogCourseCodes = [];
+  localStorage.removeItem('uniSchedule_catalogCodes');
+
+  document.getElementById('modal-clear-data').classList.add('hidden');
+
+  // Re-render profile
+  renderProfilePage();
+  showProfileToast('🗑️ All data has been cleared successfully.');
+}
+
+function showProfileToast(message) {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'profile-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
 }
