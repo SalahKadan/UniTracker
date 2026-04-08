@@ -10,14 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 
 <body>
 
   <!-- ==================== TOP NAVBAR ==================== -->
   <nav id="navbar-landing" class="navbar-landing">
-    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniSchedule</div>
+    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniTracker</div>
     <div class="nav-links-landing">
       <a href="#features">Features</a>
       <a href="#universities">Universities</a>
@@ -28,12 +28,57 @@
   </nav>
 
   <nav id="navbar" class="hidden">
-    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniSchedule</div>
+    <div class="nav-brand" style="cursor: pointer;" onclick="showView('welcome')">✦ UniTracker</div>
     <div class="nav-center" id="nav-uni-name"></div>
     <div class="nav-links">
-      <button class="btn-text" onclick="showView('student')">Schedule</button>
-      <button class="btn-text" onclick="showView('todo')">To-Do List</button>
-      <span id="nav-user-name"></span>
+
+      <!-- Hamburger Menu -->
+      <div class="hamburger-menu" style="position:relative;">
+        <button id="btn-hamburger" class="btn-text"
+          style="padding:0.4rem; display:flex; align-items:center; justify-content:center; border-radius:8px;">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            viewBox="0 0 24 24">
+            <path d="M3 12h18M3 6h18M3 18h18"></path>
+          </svg>
+        </button>
+        <div id="hamburger-dropdown" class="hamburger-dropdown hidden">
+          <button class="hamburger-item" onclick="showView('student')">
+            <svg class="h-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <path d="M16 2v4M8 2v4M3 10h18"></path>
+            </svg>
+            Schedule
+          </button>
+          <button class="hamburger-item" onclick="showView('todo')">
+            <svg class="h-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            To-Do List
+          </button>
+          <button class="hamburger-item" onclick="showView('progress')">
+            <svg class="h-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M18 20V10M12 20V4M6 20v-6"></path>
+              <path d="M3 20h18"></path>
+            </svg>
+            Semester Progress
+          </button>
+          <button class="hamburger-item" onclick="showView('gpa')">
+            <svg class="h-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            </svg>
+            GPA Calculator
+          </button>
+        </div>
+      </div>
+
+      <span id="nav-user-name"
+        style="margin-left:0.5rem; border-left:1px solid rgba(255,255,255,0.1); padding-left:1rem;"></span>
       <button id="btn-auth-nav" class="btn-primary btn-glow hidden" onclick="showView('auth')"
         style="font-size:0.85rem; padding:0.4rem 1rem;">Register / Login</button>
       <button id="btn-logout" class="btn-outline hidden">Logout</button>
@@ -54,9 +99,10 @@
         <div class="hero-container">
           <div class="hero-content">
             <span class="hero-badge">🎓 Built for modern students • By Salah Al-Din Kaadan</span>
-            <h1>Organize your week<br>with <span class="gradient-text">UniSchedule</span></h1>
-            <p class="hero-subtitle">The premium academic platform. Drag and drop your courses, organize multiple
-              universities, and create the perfect balance between studies and your personal life.</p>
+            <h1>Organize your week<br>with <span class="gradient-text">UniTracker</span></h1>
+            <p class="hero-subtitle">The ultimate academic management platform. Build interactive specific schedules,
+              track semester progress, manage to-do lists, and calculate GPA dynamically across multiple universities.
+            </p>
             <div class="hero-actions">
               <button class="btn-outline btn-lg" onclick="showView('auth')">Login / Sign Up</button>
               <button class="btn-primary btn-lg btn-glow" onclick="enterGuestMode()">Get Started for Free</button>
@@ -72,26 +118,183 @@
           </div>
 
           <div class="hero-visual">
-            <div class="mockup-window">
-              <div class="mockup-header">
-                <div class="mockup-dots"><span></span><span></span><span></span></div>
-                <div class="mockup-title">student@university.ac.il</div>
+            <div class="mockup-carousel-wrapper">
+              <!-- Slide indicators -->
+              <div class="mockup-indicators">
+                <button class="mockup-dot active" data-slide="0"></button>
+                <button class="mockup-dot" data-slide="1"></button>
+                <button class="mockup-dot" data-slide="2"></button>
+                <button class="mockup-dot" data-slide="3"></button>
               </div>
-              <div class="mockup-body">
-                <div class="mockup-sidebar">
-                  <div class="mockup-line w-long"></div>
-                  <div class="mockup-card"></div>
-                  <div class="mockup-card"></div>
-                  <div class="mockup-card"></div>
-                </div>
-                <div class="mockup-grid">
-                  <div class="mockup-event bg-blue floating" style="animation-delay: 0s; grid-area: 2/2/4/3;">CS101
+
+              <div class="mockup-slides">
+
+                <!-- SLIDE 1: Schedule -->
+                <div class="mockup-slide active">
+                  <div class="mockup-window">
+                    <div class="mockup-header">
+                      <div class="mockup-dots"><span></span><span></span><span></span></div>
+                      <div class="mockup-title">📅 Weekly Schedule</div>
+                    </div>
+                    <div class="mockup-body">
+                      <div class="mockup-sidebar">
+                        <div class="mockup-line w-long"></div>
+                        <div class="mockup-card"></div>
+                        <div class="mockup-card"></div>
+                        <div class="mockup-card"></div>
+                      </div>
+                      <div class="mockup-grid">
+                        <div class="mockup-event bg-blue floating" style="animation-delay:0s; grid-area:2/2/4/3;">CS101
+                        </div>
+                        <div class="mockup-event bg-purple floating" style="animation-delay:0.5s; grid-area:3/4/6/5;">
+                          MATH</div>
+                        <div class="mockup-event bg-green floating" style="animation-delay:1s; grid-area:1/3/3/4;">
+                          Physics</div>
+                        <div class="mockup-event bg-blue floating" style="animation-delay:1.5s; grid-area:5/2/7/3;">Lab
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="mockup-event bg-purple floating" style="animation-delay: 0.5s; grid-area: 3/4/6/5;">MATH
-                  </div>
-                  <div class="mockup-event bg-green floating" style="animation-delay: 1s; grid-area: 1/3/3/4;">Gym</div>
                 </div>
-              </div>
+
+                <!-- SLIDE 2: To-Do List -->
+                <div class="mockup-slide">
+                  <div class="mockup-window">
+                    <div class="mockup-header">
+                      <div class="mockup-dots"><span></span><span></span><span></span></div>
+                      <div class="mockup-title">✅ To-Do List</div>
+                    </div>
+                    <div class="mockup-body" style="flex-direction:column; gap:0.5rem; padding:1rem;">
+                      <div class="mock-todo done floating" style="animation-delay:0s;">
+                        <span class="mock-checkbox checked"></span>
+                        <div class="mock-todo-text">
+                          <div class="mock-line w-med"></div>
+                          <div class="mock-tag bg-green">Physics</div>
+                        </div>
+                      </div>
+                      <div class="mock-todo done floating" style="animation-delay:0.3s;">
+                        <span class="mock-checkbox checked"></span>
+                        <div class="mock-todo-text">
+                          <div class="mock-line w-long"></div>
+                          <div class="mock-tag bg-purple">Math</div>
+                        </div>
+                      </div>
+                      <div class="mock-todo floating" style="animation-delay:0.6s;">
+                        <span class="mock-checkbox"></span>
+                        <div class="mock-todo-text">
+                          <div class="mock-line w-short"></div>
+                          <div class="mock-tag bg-blue">Algorithms</div>
+                        </div>
+                      </div>
+                      <div class="mock-todo floating" style="animation-delay:0.9s;">
+                        <span class="mock-checkbox"></span>
+                        <div class="mock-todo-text">
+                          <div class="mock-line w-med"></div>
+                          <div class="mock-tag bg-green">Lab</div>
+                        </div>
+                      </div>
+                      <div class="mock-todo floating" style="animation-delay:1.2s;">
+                        <span class="mock-checkbox"></span>
+                        <div class="mock-todo-text">
+                          <div class="mock-line w-long"></div>
+                          <div class="mock-tag bg-purple">Sport</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SLIDE 3: Semester Progress -->
+                <div class="mockup-slide">
+                  <div class="mockup-window">
+                    <div class="mockup-header">
+                      <div class="mockup-dots"><span></span><span></span><span></span></div>
+                      <div class="mockup-title">📈 Semester Progress</div>
+                    </div>
+                    <div class="mockup-body" style="flex-direction:column; gap:0.6rem; padding:1rem;">
+                      <div class="mock-progress-row floating" style="animation-delay:0s;">
+                        <div class="mock-course-label">CS101</div>
+                        <div class="mock-progress-cells">
+                          <span class="mock-cell done"></span><span class="mock-cell done"></span>
+                          <span class="mock-cell done"></span><span class="mock-cell"></span>
+                          <span class="mock-cell"></span>
+                        </div>
+                      </div>
+                      <div class="mock-progress-row floating" style="animation-delay:0.4s;">
+                        <div class="mock-course-label">MATH</div>
+                        <div class="mock-progress-cells">
+                          <span class="mock-cell done"></span><span class="mock-cell done"></span>
+                          <span class="mock-cell"></span><span class="mock-cell"></span>
+                          <span class="mock-cell"></span>
+                        </div>
+                      </div>
+                      <div class="mock-progress-row floating" style="animation-delay:0.8s;">
+                        <div class="mock-course-label">Physics</div>
+                        <div class="mock-progress-cells">
+                          <span class="mock-cell done"></span><span class="mock-cell done"></span>
+                          <span class="mock-cell done"></span><span class="mock-cell done"></span>
+                          <span class="mock-cell"></span>
+                        </div>
+                      </div>
+                      <div class="mock-overall-bar floating" style="animation-delay:1.1s;">
+                        <div class="mock-bar-label">Overall 60%</div>
+                        <div class="mock-bar-track">
+                          <div class="mock-bar-fill" style="width:60%;"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SLIDE 4: GPA Calculator -->
+                <div class="mockup-slide">
+                  <div class="mockup-window">
+                    <div class="mockup-header">
+                      <div class="mockup-dots"><span></span><span></span><span></span></div>
+                      <div class="mockup-title">💯 GPA Calculator</div>
+                    </div>
+                    <div class="mockup-body"
+                      style="flex-direction:column; align-items:center; justify-content:center; gap:0.8rem; padding:1rem;">
+                      <div class="mock-gpa-score floating" style="animation-delay:0s;">91.4</div>
+                      <div class="mock-gpa-label">Weighted GPA / 100</div>
+                      <div style="display:flex; gap:1.5rem; margin-bottom:0.5rem;">
+                        <div class="mock-gpa-stat floating" style="animation-delay:0.2s;">
+                          <div class="mock-stat-val">18</div>
+                          <div class="mock-stat-lbl">Total Credits</div>
+                        </div>
+                        <div class="mock-gpa-stat floating" style="animation-delay:0.4s;">
+                          <div class="mock-stat-val">14</div>
+                          <div class="mock-stat-lbl">Earned Credits</div>
+                        </div>
+                      </div>
+                      <div class="mock-gpa-bars">
+                        <div class="mock-gpa-row floating" style="animation-delay:0.5s;">
+                          <span class="mock-course-name">CS101</span>
+                          <div class="mock-grade-bar">
+                            <div class="mock-grade-fill" style="width:95%; background:#10b981;"></div>
+                          </div>
+                          <span class="mock-grade-num" style="color:#10b981;">95</span>
+                        </div>
+                        <div class="mock-gpa-row floating" style="animation-delay:0.7s;">
+                          <span class="mock-course-name">MATH</span>
+                          <div class="mock-grade-bar">
+                            <div class="mock-grade-fill" style="width:88%; background:#3b82f6;"></div>
+                          </div>
+                          <span class="mock-grade-num" style="color:#3b82f6;">88</span>
+                        </div>
+                        <div class="mock-gpa-row floating" style="animation-delay:0.9s;">
+                          <span class="mock-course-name">Physics</span>
+                          <div class="mock-grade-bar">
+                            <div class="mock-grade-fill" style="width:72%; background:#f59e0b;"></div>
+                          </div>
+                          <span class="mock-grade-num" style="color:#f59e0b;">72</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- end slides -->
             </div>
           </div>
         </div>
@@ -99,39 +302,39 @@
 
       <!-- Features -->
       <div class="section" id="features">
-        <h2 class="section-title">Why UniSchedule?</h2>
-        <p class="section-subtitle">Everything you need to plan your academic week, in one seamless platform.</p>
+        <h2 class="section-title">Everything you need, in one place.</h2>
+        <p class="section-subtitle">A seamless application managing your timetable, progression, tasks, and grades.</p>
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon">📅</div>
-            <h3>Visual Timetable</h3>
-            <p>See your entire week at a glance with an interactive drag-and-drop schedule grid.</p>
+            <h3>Interactive Schedule</h3>
+            <p>Drag, drop, and organize courses and exams. Includes clash detection and Moed A/B split viewing.</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon">🔍</div>
-            <h3>Smart Search</h3>
-            <p>Find courses instantly by name, code, lecturer, or department across your university catalog.</p>
+            <div class="feature-icon">✅</div>
+            <h3>Smart To-Do List</h3>
+            <p>Track your assignments and tasks categorically. Filter pending tasks easily by course dynamically.</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3>Unified Creation</h3>
-            <p>Directly create and add courses to the global catalog and your schedule without waiting for admin
-              approval.</p>
+            <div class="feature-icon">📈</div>
+            <h3>Semester Progress</h3>
+            <p>A visual grid to track exact completions of lectures, tutorials, and homeworks tailored per-course.</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3>Customizable</h3>
-            <p>Add personal events, change colors, and customize your schedule to match your style.</p>
+            <div class="feature-icon">💯</div>
+            <h3>GPA Simulator</h3>
+            <p>Calculates weighted Grade Point Average, tracks earned credits, and powers a predictive "What-If" engine.
+            </p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">🏫</div>
             <h3>Multi-University</h3>
-            <p>Supporting Hebrew University, Tel Aviv University, Ben-Gurion University, and University of Haifa.</p>
+            <p>Native integration with Technion, Hebrew U, Tel Aviv, and more supporting local databases natively.</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">💎</div>
             <h3>Premium Design</h3>
-            <p>Enjoy a beautiful, responsive dark-mode interface built to keep you focused and organized.</p>
+            <p>Enjoy a beautiful responsive interface built to impress with animations and dark mode aesthetic.</p>
           </div>
         </div>
       </div>
@@ -179,7 +382,7 @@
 
       <!-- Footer -->
       <footer class="landing-footer">
-        <p>© 2026 UniSchedule. Built for students, by students.</p>
+        <p>© 2026 UniTracker. Built for students, by students.</p>
       </footer>
     </section>
 
@@ -327,8 +530,6 @@
       </div>
     </section>
 
-    </section>
-
     <!-- ==================== TO-DO LIST ==================== -->
     <section id="view-todo" class="view hidden">
       <div class="task-manager-layout">
@@ -412,6 +613,216 @@
         <!-- List -->
         <div class="todo-list card tm-card" id="todo-list-container" style="min-height:300px;">
           <!-- Tasks dynamically generated here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SEMESTER PROGRESS ==================== -->
+    <section id="view-progress" class="view hidden">
+      <div class="sp-layout">
+        <!-- Header -->
+        <div class="sp-header">
+          <div>
+            <h2>Semester Progress</h2>
+            <p class="sp-subtitle">Track your lectures, tutorials, and homework completion across all courses.</p>
+          </div>
+          <div class="sp-header-actions">
+            <button id="btn-add-progress-course" class="btn-primary" style="font-weight:600; border-radius:8px;">+ Add
+              Course</button>
+          </div>
+        </div>
+
+        <!-- Overall Summary Bar -->
+        <div class="sp-overall-summary card" id="sp-overall-summary">
+          <div class="sp-overall-stat">
+            <div class="sp-overall-icon">📖</div>
+            <div><span class="sp-overall-num" id="sp-total-lectures">0/0</span><br><span
+                class="sp-overall-label">Lectures</span></div>
+          </div>
+          <div class="sp-overall-stat">
+            <div class="sp-overall-icon">📝</div>
+            <div><span class="sp-overall-num" id="sp-total-tutorials">0/0</span><br><span
+                class="sp-overall-label">Tutorials</span></div>
+          </div>
+          <div class="sp-overall-stat">
+            <div class="sp-overall-icon">📋</div>
+            <div><span class="sp-overall-num" id="sp-total-homeworks">0/0</span><br><span
+                class="sp-overall-label">Homeworks</span></div>
+          </div>
+          <div class="sp-overall-stat sp-overall-pct">
+            <div class="sp-overall-ring" id="sp-overall-ring">
+              <svg viewBox="0 0 36 36" class="sp-ring-svg">
+                <path class="sp-ring-bg"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="sp-ring-fill" id="sp-ring-fill" stroke-dasharray="0, 100"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <span class="sp-ring-text" id="sp-ring-text">0%</span>
+            </div>
+            <span class="sp-overall-label">Overall</span>
+          </div>
+        </div>
+
+        <!-- Course Selector Modal Inline -->
+        <div id="sp-course-selector" class="card sp-selector hidden">
+          <h3 style="margin-bottom:1rem;">Select Courses to Track</h3>
+          <div class="sp-selector-tabs">
+            <button class="sp-tab active" data-tab="catalog" onclick="switchProgressTab('catalog')">From My
+              Catalog</button>
+            <button class="sp-tab" data-tab="custom" onclick="switchProgressTab('custom')">Create Custom Course</button>
+          </div>
+          <div id="sp-tab-catalog" class="sp-tab-content">
+            <div id="sp-catalog-list" class="sp-catalog-list">
+              <!-- dynamically injected -->
+            </div>
+          </div>
+          <div id="sp-tab-custom" class="sp-tab-content hidden">
+            <div class="sp-custom-form">
+              <div class="form-group">
+                <label>Course Name</label>
+                <input type="text" id="sp-custom-name" placeholder="e.g. Advanced Physics">
+              </div>
+              <div class="sp-custom-row">
+                <div class="form-group">
+                  <label>Lectures</label>
+                  <input type="number" id="sp-custom-lectures" min="0" max="50" value="13" placeholder="13">
+                </div>
+                <div class="form-group">
+                  <label>Tutorials</label>
+                  <input type="number" id="sp-custom-tutorials" min="0" max="50" value="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                  <label>Homeworks</label>
+                  <input type="number" id="sp-custom-homeworks" min="0" max="50" value="4" placeholder="4">
+                </div>
+              </div>
+              <button id="btn-sp-create-custom" class="btn-primary" style="width:100%; margin-top:0.5rem;">Create & Add
+                Course</button>
+            </div>
+          </div>
+          <button onclick="document.getElementById('sp-course-selector').classList.add('hidden')" class="btn-text"
+            style="margin-top:1rem; display:block;">← Close</button>
+        </div>
+
+        <!-- Progress Cards Container -->
+        <div id="sp-courses-container" class="sp-courses-container">
+          <!-- dynamically rendered course progress cards -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== GPA CALCULATOR ==================== -->
+    <section id="view-gpa" class="view hidden">
+      <div class="gpa-layout">
+        <!-- Header -->
+        <div class="gpa-header">
+          <div>
+            <h2>GPA Calculator</h2>
+            <p class="gpa-subtitle">Automatically calculates weighted average based on your catalog and custom courses.
+            </p>
+          </div>
+        </div>
+
+        <div class="gpa-dashboard-grid">
+          <!-- Main GPA Display -->
+          <div class="gpa-card gpa-overall-card">
+            <h3 class="gpa-card-title">Overall GPA</h3>
+            <div class="gpa-score-wrapper">
+              <div class="gpa-score" id="gpa-display-val">--</div>
+              <div class="gpa-score-scale">/100</div>
+            </div>
+            <div class="gpa-stats-row">
+              <div class="gpa-stat">
+                <span class="gpa-stat-lbl">Total Credits</span>
+                <span class="gpa-stat-val" id="gpa-total-credits">0</span>
+              </div>
+              <div class="gpa-stat">
+                <span class="gpa-stat-lbl">Earned Credits</span>
+                <span class="gpa-stat-val" id="gpa-graded-credits" style="color:var(--text-main);">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- What-If Simulator -->
+          <div class="gpa-card gpa-target-card">
+            <h3 class="gpa-card-title">"What If" Simulator</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Simulate an improved past grade or
+              a new imaginary course.</p>
+
+            <div class="gpa-form-group">
+              <label>Simulation Mode</label>
+              <select id="gpa-whatif-mode" class="gpa-select">
+                <option value="existing">Improve Existing Course</option>
+                <option value="new">Add New Imaginary Course</option>
+              </select>
+            </div>
+
+            <div id="gpa-whatif-existing-group" class="gpa-form-group">
+              <label>Select Course</label>
+              <select id="gpa-whatif-course" class="gpa-select">
+                <option value="">-- Choose Course --</option>
+              </select>
+            </div>
+
+            <div id="gpa-whatif-new-group" class="gpa-form-group hidden">
+              <label>Imaginary Course Credits</label>
+              <input type="number" id="gpa-whatif-credits" placeholder="e.g. 4" min="0" step="0.5" class="gpa-input">
+            </div>
+
+            <div class="gpa-form-group" style="margin-bottom:0.5rem;">
+              <label>Simulated Final Grade</label>
+              <input type="number" id="gpa-whatif-grade" placeholder="e.g. 100" min="0" max="100" step="1"
+                class="gpa-input">
+            </div>
+
+            <div class="gpa-target-result" id="gpa-whatif-result" style="margin-top:1rem;">
+              Simulated GPA: <strong>--</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Courses List -->
+        <div class="gpa-courses-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="font-size:1.2rem;">My Courses</h3>
+            <button id="btn-gpa-add-custom-course" class="btn-primary" style="font-size:0.8rem; padding:0.4rem 1rem;">+
+              Add Custom Course</button>
+          </div>
+
+          <div id="gpa-custom-form-container" class="card hidden" style="margin-bottom:1rem;">
+            <h4 style="margin-bottom:0.5rem; font-size:1rem;">Add Custom Course to GPA</h4>
+            <div style="display:flex; gap:1rem;">
+              <input type="text" id="gpa-custom-course-name" class="gpa-input" placeholder="Course Name"
+                style="flex:2;">
+              <input type="number" id="gpa-custom-course-credits" class="gpa-input" placeholder="Credits" min="0"
+                step="0.5" style="flex:1;">
+              <button id="btn-gpa-save-custom" class="btn-primary" style="white-space:nowrap;">Add Course</button>
+              <button id="btn-gpa-cancel-custom" class="btn-text" style="white-space:nowrap;">Cancel</button>
+            </div>
+          </div>
+
+          <div class="gpa-card" style="padding:0; overflow:hidden;">
+            <div class="gpa-table-wrapper">
+              <table class="gpa-table">
+                <thead>
+                  <tr>
+                    <th style="padding-left:1.5rem;">Course</th>
+                    <th style="width:100px;">Credits</th>
+                    <th style="width:130px;">Grading Type</th>
+                    <th style="width:140px;">Final Result</th>
+                    <th style="width:80px; text-align:center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="gpa-table-body">
+                  <!-- Generated by JS -->
+                </tbody>
+              </table>
+              <div id="gpa-empty-state" class="gpa-empty-state hidden">
+                <div class="gpa-empty-icon">📊</div>
+                <p>No courses found. Add custom courses above or select catalog courses from your schedule.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -694,8 +1105,8 @@
     </div>
   </div>
 
-  <script src="data.js?v=13"></script>
-  <script src="script.js?v=13"></script>
+  <script src="data.js?v=27"></script>
+  <script src="script.js?v=27"></script>
 
 </body>
 

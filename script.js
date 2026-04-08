@@ -36,7 +36,9 @@ const views = {
   welcome: document.getElementById('view-welcome'),
   auth: document.getElementById('view-auth'),
   student: document.getElementById('view-student'),
-  todo: document.getElementById('view-todo')
+  todo: document.getElementById('view-todo'),
+  progress: document.getElementById('view-progress'),
+  gpa: document.getElementById('view-gpa')
 };
 const navbar = document.getElementById('navbar');
 const navbarLanding = document.getElementById('navbar-landing');
@@ -94,6 +96,9 @@ function init() {
     } else if (hash === 'todo') {
       loadCatalogState();
       loadTodo();
+    } else if (hash === 'progress') {
+      loadCatalogState();
+      loadSemesterProgress();
     } else {
       loadCatalogState();
       loadDashboard();
@@ -101,6 +106,9 @@ function init() {
   } else {
     if (hash === 'auth') {
       showView('auth');
+    } else if (hash === 'gpa') {
+      loadCatalogState();
+      loadGpaCalculator();
     } else {
       showView('welcome');
     }
@@ -177,6 +185,13 @@ function showView(viewId) {
     updateAuthUI();
   }
 
+  // Render view-specific data
+  if (viewId === 'progress' && state.currentUser) {
+    renderSemesterProgress();
+  } else if (viewId === 'gpa' && state.currentUser) {
+    renderGpaCalculator();
+  }
+
   // Scroll to top on view change
   window.scrollTo(0, 0);
 }
@@ -186,7 +201,7 @@ function updateAuthUI() {
   document.getElementById('auth-title').textContent = isLogin ? 'Welcome Back' : 'Create Account';
   document.getElementById('auth-desc').textContent = isLogin
     ? 'Enter your credentials to access your schedule.'
-    : 'Fill in your details to get started with UniSchedule.';
+    : 'Fill in your details to get started with UniTracker.';
   document.getElementById('btn-auth-submit').textContent = isLogin ? 'Login' : 'Create Account';
   document.getElementById('auth-toggle-text').textContent = isLogin
     ? "Don't have an account?"
@@ -200,6 +215,29 @@ function updateAuthUI() {
 
 // ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
+  // Hamburger Dropdown Toggle
+  const btnHamburger = document.getElementById('btn-hamburger');
+  const dropdownHamburger = document.getElementById('hamburger-dropdown');
+  
+  if (btnHamburger && dropdownHamburger) {
+    btnHamburger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdownHamburger.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdownHamburger.contains(e.target)) {
+        dropdownHamburger.classList.add('hidden');
+      }
+    });
+
+    document.querySelectorAll('.hamburger-item').forEach(item => {
+      item.addEventListener('click', () => {
+        dropdownHamburger.classList.add('hidden');
+      });
+    });
+  }
+
   // Toggle Auth Mode
   document.getElementById('btn-toggle-auth').addEventListener('click', () => {
     state.authMode = state.authMode === 'login' ? 'signup' : 'login';
@@ -1533,5 +1571,895 @@ function renderTodos() {
   });
 }
 
+// ==================== SEMESTER PROGRESS ====================
+function loadSemesterProgress() {
+  showView('progress');
+  renderSemesterProgress();
+}
+
+window.switchProgressTab = function(tab) {
+  document.querySelectorAll('.sp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.sp-tab[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('sp-tab-catalog').classList.toggle('hidden', tab !== 'catalog');
+  document.getElementById('sp-tab-custom').classList.toggle('hidden', tab !== 'custom');
+};
+
+function getTrackedCourses() {
+  const key = `sp_tracked_${state.currentUser.id}_${state.currentUniId}`;
+  try {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  } catch (e) { return []; }
+}
+
+function saveTrackedCourses(list) {
+  const key = `sp_tracked_${state.currentUser.id}_${state.currentUniId}`;
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function renderSemesterProgress() {
+  renderCatalogForProgress();
+  renderProgressCards();
+  updateOverallSummary();
+}
+
+function renderCatalogForProgress() {
+  const container = document.getElementById('sp-catalog-list');
+  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const tracked = getTrackedCourses();
+  const trackedCodes = tracked.filter(t => t.type === 'public').map(t => t.code);
+
+  // Only show courses from catalog
+  const myCodes = state.catalogCourseCodes || [];
+  const grouped = {};
+  myCodes.forEach(code => {
+    const sample = allCourses.find(c => c.code === code);
+    if (sample && !trackedCodes.includes(code)) {
+      grouped[code] = sample;
+    }
+  });
+
+  const entries = Object.values(grouped);
+  if (entries.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:1rem; font-size:0.9rem;">All catalog courses are already being tracked, or no courses in your catalog.</p>';
+    return;
+  }
+
+  container.innerHTML = entries.map(c => `
+    <div class="sp-catalog-item" data-code="${c.code}">
+      <div>
+        <strong>${c.name}</strong>
+        <span style="color:var(--text-muted); font-size:0.8rem; margin-left:0.5rem;">${c.code}</span>
+      </div>
+      <button class="btn-primary" style="font-size:0.8rem; padding:0.3rem 0.8rem; border-radius:6px;" onclick="addPublicCourseToProgress('${c.code}')">+ Track</button>
+    </div>
+  `).join('');
+}
+
+window.addPublicCourseToProgress = function(code) {
+  const tracked = getTrackedCourses();
+  if (tracked.find(t => t.type === 'public' && t.code === code)) return;
+
+  // Get or create default structure
+  let structure = window.api.getCourseStructure(state.currentUniId, code);
+  if (structure.lectures === 0 && structure.tutorials === 0 && structure.homeworks === 0) {
+    // Default: 13 lectures, 0 tutorials, 4 homeworks
+    structure = { lectures: 13, tutorials: 0, homeworks: 4 };
+    window.api.saveCourseStructure(state.currentUniId, code, structure);
+  }
+
+  tracked.push({ type: 'public', code });
+  saveTrackedCourses(tracked);
+  renderSemesterProgress();
+};
+
+function setupProgressListeners() {
+  document.getElementById('btn-add-progress-course').addEventListener('click', () => {
+    const selector = document.getElementById('sp-course-selector');
+    selector.classList.toggle('hidden');
+    if (!selector.classList.contains('hidden')) renderCatalogForProgress();
+  });
+
+  document.getElementById('btn-sp-create-custom').addEventListener('click', () => {
+    const name = document.getElementById('sp-custom-name').value.trim();
+    if (!name) { alert('Please enter a course name.'); return; }
+    const lectures = parseInt(document.getElementById('sp-custom-lectures').value) || 0;
+    const tutorials = parseInt(document.getElementById('sp-custom-tutorials').value) || 0;
+    const homeworks = parseInt(document.getElementById('sp-custom-homeworks').value) || 0;
+
+    const course = window.api.addCustomProgressCourse(state.currentUser.id, { name });
+    window.api.saveCustomCourseStructure(state.currentUser.id, course.id, { lectures, tutorials, homeworks });
+
+    const tracked = getTrackedCourses();
+    tracked.push({ type: 'custom', id: course.id });
+    saveTrackedCourses(tracked);
+
+    document.getElementById('sp-custom-name').value = '';
+    document.getElementById('sp-custom-lectures').value = '13';
+    document.getElementById('sp-custom-tutorials').value = '0';
+    document.getElementById('sp-custom-homeworks').value = '4';
+    document.getElementById('sp-course-selector').classList.add('hidden');
+    renderSemesterProgress();
+  });
+}
+
+function renderProgressCards() {
+  const container = document.getElementById('sp-courses-container');
+  const tracked = getTrackedCourses();
+
+  if (tracked.length === 0) {
+    container.innerHTML = `
+      <div class="sp-empty-state">
+        <div class="sp-empty-icon">🎓</div>
+        <h3>No courses being tracked yet</h3>
+        <p>Click <strong>"+ Add Course"</strong> above to start tracking your semester progress.</p>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  tracked.forEach((entry, idx) => {
+    if (entry.type === 'public') {
+      html += renderPublicProgressCard(entry.code, idx);
+    } else if (entry.type === 'custom') {
+      html += renderCustomProgressCard(entry.id, idx);
+    }
+  });
+  container.innerHTML = html;
+  attachProgressCardListeners();
+}
+
+function renderPublicProgressCard(code, idx) {
+  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const sample = allCourses.find(c => c.code === code);
+  if (!sample) return '';
+
+  const structure = window.api.getCourseStructure(state.currentUniId, code);
+  const progress = window.api.getUserProgress(state.currentUser.id, state.currentUniId, code);
+  const color = getCourseColorStr(code);
+
+  return buildProgressCardHTML({
+    id: code,
+    name: sample.name,
+    code: sample.code,
+    color,
+    structure,
+    progress,
+    isPublic: true,
+    index: idx
+  });
+}
+
+function renderCustomProgressCard(courseId, idx) {
+  const customCourses = window.api.getCustomProgressCourses(state.currentUser.id);
+  const course = customCourses.find(c => c.id === courseId);
+  if (!course) return '';
+
+  const structure = window.api.getCustomCourseStructure(state.currentUser.id, courseId);
+  const progress = window.api.getCustomCourseProgress(state.currentUser.id, courseId);
+
+  return buildProgressCardHTML({
+    id: courseId,
+    name: course.name,
+    code: null,
+    color: '#8b5cf6',
+    structure,
+    progress,
+    isPublic: false,
+    index: idx
+  });
+}
+
+function buildProgressCardHTML({ id, name, code, color, structure, progress, isPublic, index }) {
+  const safeName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const safeId = id.replace ? id.replace(/'/g, "\\'") : id;
+  const totalItems = (structure.lectures || 0) + (structure.tutorials || 0) + (structure.homeworks || 0);
+  const completedItems = Math.min(progress.lectures.length, structure.lectures || 0)
+    + Math.min(progress.tutorials.length, structure.tutorials || 0)
+    + Math.min(progress.homeworks.length, structure.homeworks || 0);
+  const pct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  const lecturesDone = Math.min(progress.lectures.length, structure.lectures || 0);
+  const tutsDone = Math.min(progress.tutorials.length, structure.tutorials || 0);
+  const hwDone = Math.min(progress.homeworks.length, structure.homeworks || 0);
+
+  let rowsHTML = '';
+
+  // Lectures row
+  if (structure.lectures > 0) {
+    rowsHTML += buildProgressRow('Lectures', 'lectures', structure.lectures, progress.lectures, id, isPublic, color, '📖');
+  }
+
+  // Tutorials row
+  if (structure.tutorials > 0) {
+    rowsHTML += buildProgressRow('Tutorials', 'tutorials', structure.tutorials, progress.tutorials, id, isPublic, color, '📝');
+  }
+
+  // Homeworks row
+  if (structure.homeworks > 0) {
+    rowsHTML += buildProgressRow('Homeworks', 'homeworks', structure.homeworks, progress.homeworks, id, isPublic, '#f59e0b', '📋');
+  }
+
+  return `
+    <div class="sp-card" style="--card-color: ${color}; animation-delay: ${index * 0.08}s;">
+      <div class="sp-card-header">
+        <div class="sp-card-left">
+          <div class="sp-card-color-bar" style="background:${color};"></div>
+          <div>
+            <h3 class="sp-card-title">${name}</h3>
+            ${code ? `<span class="sp-card-code">${code}</span>` : '<span class="sp-card-code" style="color:#c084fc;">Custom Course</span>'}
+          </div>
+        </div>
+        <div class="sp-card-right">
+          <div class="sp-card-pct" style="color:${color};">${pct}%</div>
+          <div class="sp-card-actions">
+            <button class="sp-btn-edit" data-id="${safeId}" data-public="${isPublic}" title="Edit counts">✏️</button>
+            <button class="sp-btn-remove" data-id="${safeId}" data-public="${isPublic}" title="Remove from tracking">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Inline (hidden by default) -->
+      <div class="sp-card-edit hidden" id="sp-edit-${safeId}">
+        <div class="sp-edit-grid">
+          <div class="sp-edit-field">
+            <label>Lectures</label>
+            <input type="number" min="0" max="50" value="${structure.lectures}" id="sp-ed-lec-${safeId}">
+          </div>
+          <div class="sp-edit-field">
+            <label>Tutorials</label>
+            <input type="number" min="0" max="50" value="${structure.tutorials}" id="sp-ed-tut-${safeId}">
+          </div>
+          <div class="sp-edit-field">
+            <label>Homeworks</label>
+            <input type="number" min="0" max="50" value="${structure.homeworks}" id="sp-ed-hw-${safeId}">
+          </div>
+        </div>
+        <div class="sp-edit-actions">
+          <button class="btn-primary sp-save-edit" data-id="${safeId}" data-public="${isPublic}" style="font-size:0.8rem; padding:0.35rem 1rem; border-radius:6px;">Save</button>
+          <button class="btn-text sp-cancel-edit" data-id="${safeId}" style="font-size:0.8rem;">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="sp-card-stats">
+        ${structure.lectures > 0 ? `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:${color}"></span>${lecturesDone}/${structure.lectures} lectures</span>` : ''}
+        ${structure.tutorials > 0 ? `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:${color}"></span>${tutsDone}/${structure.tutorials} tutorials</span>` : ''}
+        ${structure.homeworks > 0 ? `<span class="sp-stat-pill"><span class="sp-stat-dot" style="background:#f59e0b"></span>${hwDone}/${structure.homeworks} homeworks</span>` : ''}
+      </div>
+
+      <!-- Course Progress Bar -->
+      <div class="sp-card-bar">
+        <div class="sp-card-bar-fill" style="width:${pct}%; background:linear-gradient(90deg, ${color}, ${color}dd);"></div>
+      </div>
+
+      <!-- Progress Table -->
+      <div class="sp-grid-wrapper">
+        <table class="sp-progress-table">
+          <tbody>
+            ${rowsHTML}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function buildProgressRow(label, type, count, completed, courseId, isPublic, color, icon) {
+  const safeId = courseId.replace ? courseId.replace(/'/g, "\\'") : courseId;
+  let cellsHTML = '';
+  for (let i = 1; i <= count; i++) {
+    const isChecked = completed.includes(i);
+    cellsHTML += `
+      <td>
+        <label class="sp-cell ${isChecked ? 'checked' : ''}" style="--cell-color:${color};">
+          <input type="checkbox" class="sp-checkbox" data-course="${safeId}" data-type="${type}" data-num="${i}" data-public="${isPublic}" ${isChecked ? 'checked' : ''}>
+          <span class="sp-cell-num">${i}</span>
+          <span class="sp-cell-check">✓</span>
+        </label>
+      </td>
+    `;
+  }
+
+  const completedCount = Math.min(completed.length, count);
+
+  return `
+    <tr class="sp-row">
+      <td class="sp-row-label">
+        <span class="sp-row-icon">${icon}</span>
+        <span class="sp-row-name">${label}</span>
+        <span class="sp-row-count">${completedCount}/${count}</span>
+      </td>
+      ${cellsHTML}
+    </tr>
+  `;
+}
+
+function attachProgressCardListeners() {
+  // Checkboxes
+  document.querySelectorAll('.sp-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const courseId = e.target.dataset.course;
+      const type = e.target.dataset.type;
+      const num = parseInt(e.target.dataset.num);
+      const isPublic = e.target.dataset.public === 'true';
+      const cell = e.target.closest('.sp-cell');
+
+      let progress;
+      if (isPublic) {
+        progress = window.api.getUserProgress(state.currentUser.id, state.currentUniId, courseId);
+      } else {
+        progress = window.api.getCustomCourseProgress(state.currentUser.id, courseId);
+      }
+
+      if (e.target.checked) {
+        if (!progress[type].includes(num)) progress[type].push(num);
+        cell.classList.add('checked');
+        // Pop animation
+        cell.style.transform = 'scale(1.2)';
+        setTimeout(() => cell.style.transform = '', 200);
+      } else {
+        progress[type] = progress[type].filter(n => n !== num);
+        cell.classList.remove('checked');
+      }
+
+      if (isPublic) {
+        window.api.saveUserProgress(state.currentUser.id, state.currentUniId, courseId, progress);
+      } else {
+        window.api.saveCustomCourseProgress(state.currentUser.id, courseId, progress);
+      }
+
+      // Update stats without full re-render for performance
+      renderProgressCards();
+      updateOverallSummary();
+    });
+  });
+
+  // Edit buttons
+  document.querySelectorAll('.sp-btn-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      document.getElementById('sp-edit-' + id).classList.toggle('hidden');
+    });
+  });
+
+  // Cancel edit
+  document.querySelectorAll('.sp-cancel-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      document.getElementById('sp-edit-' + id).classList.add('hidden');
+    });
+  });
+
+  // Save edit
+  document.querySelectorAll('.sp-save-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      const isPublic = e.currentTarget.dataset.public === 'true';
+      const lectures = parseInt(document.getElementById('sp-ed-lec-' + id).value) || 0;
+      const tutorials = parseInt(document.getElementById('sp-ed-tut-' + id).value) || 0;
+      const homeworks = parseInt(document.getElementById('sp-ed-hw-' + id).value) || 0;
+
+      if (isPublic) {
+        window.api.saveCourseStructure(state.currentUniId, id, { lectures, tutorials, homeworks });
+      } else {
+        window.api.saveCustomCourseStructure(state.currentUser.id, id, { lectures, tutorials, homeworks });
+      }
+
+      document.getElementById('sp-edit-' + id).classList.add('hidden');
+      renderProgressCards();
+      updateOverallSummary();
+    });
+  });
+
+  // Remove buttons
+  document.querySelectorAll('.sp-btn-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      const isPublic = e.currentTarget.dataset.public === 'true';
+      let tracked = getTrackedCourses();
+      if (isPublic) {
+        tracked = tracked.filter(t => !(t.type === 'public' && t.code === id));
+      } else {
+        tracked = tracked.filter(t => !(t.type === 'custom' && t.id === id));
+        window.api.removeCustomProgressCourse(state.currentUser.id, id);
+      }
+      saveTrackedCourses(tracked);
+      renderSemesterProgress();
+    });
+  });
+}
+
+function updateOverallSummary() {
+  const tracked = getTrackedCourses();
+  let totalLec = 0, doneLec = 0, totalTut = 0, doneTut = 0, totalHw = 0, doneHw = 0;
+
+  tracked.forEach(entry => {
+    let structure, progress;
+    if (entry.type === 'public') {
+      structure = window.api.getCourseStructure(state.currentUniId, entry.code);
+      progress = window.api.getUserProgress(state.currentUser.id, state.currentUniId, entry.code);
+    } else {
+      structure = window.api.getCustomCourseStructure(state.currentUser.id, entry.id);
+      progress = window.api.getCustomCourseProgress(state.currentUser.id, entry.id);
+    }
+    totalLec += structure.lectures || 0;
+    totalTut += structure.tutorials || 0;
+    totalHw += structure.homeworks || 0;
+    doneLec += Math.min(progress.lectures.length, structure.lectures || 0);
+    doneTut += Math.min(progress.tutorials.length, structure.tutorials || 0);
+    doneHw += Math.min(progress.homeworks.length, structure.homeworks || 0);
+  });
+
+  document.getElementById('sp-total-lectures').textContent = `${doneLec}/${totalLec}`;
+  document.getElementById('sp-total-tutorials').textContent = `${doneTut}/${totalTut}`;
+  document.getElementById('sp-total-homeworks').textContent = `${doneHw}/${totalHw}`;
+
+  const totalAll = totalLec + totalTut + totalHw;
+  const doneAll = doneLec + doneTut + doneHw;
+  const pct = totalAll > 0 ? Math.round((doneAll / totalAll) * 100) : 0;
+
+  document.getElementById('sp-ring-fill').setAttribute('stroke-dasharray', `${pct}, 100`);
+  document.getElementById('sp-ring-text').textContent = `${pct}%`;
+}
+
+// ==================== GPA CALCULATOR ====================
+function loadGpaCalculator() {
+  showView('gpa');
+  renderGpaCalculator();
+}
+
+function getGpaCoursesList() {
+  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const customProgressCourses = window.api.getCustomProgressCourses(state.currentUser.id) || [];
+  
+  let list = [];
+  
+  // 1. Catalog courses
+  const catalog = state.catalogCourseCodes || [];
+  catalog.forEach(code => {
+    const c = allCourses.find(x => x.code === code);
+    if (c && !list.find(x => x.id === code)) {
+      list.push({ id: code, name: c.name, code: c.code, defaultCredits: parseFloat(c.credits) || 0, isPublic: true });
+    }
+  });
+
+  // 2. Custom courses
+  customProgressCourses.forEach(c => {
+    if (!list.find(x => x.id === c.id)) {
+      list.push({ id: c.id, name: c.name, code: 'Custom', defaultCredits: c.credits || 0, isPublic: false });
+    }
+  });
+
+  return list;
+}
+
+function renderGpaCalculator() {
+  const courses = getGpaCoursesList();
+  const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
+  
+  const tbody = document.getElementById('gpa-table-body');
+  const emptyState = document.getElementById('gpa-empty-state');
+
+  if (courses.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.classList.remove('hidden');
+    updateGpaDashboard(courses, gradesData);
+    return;
+  }
+  
+  emptyState.classList.add('hidden');
+  
+  let rowsHtml = '';
+
+  courses.forEach(c => {
+    const data = gradesData[c.id] || {};
+    const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
+    const grade = data.grade !== undefined && data.grade !== null ? data.grade : '';
+    const type = data.type || 'numeric'; // 'numeric' or 'binary'
+    
+    let resultInputHtml = '';
+    if (type === 'numeric') {
+      resultInputHtml = `<input type="number" class="gpa-input gpa-grade-input" data-id="${c.id}" value="${grade}" min="0" max="100" placeholder="--">`;
+    } else {
+      resultInputHtml = `
+        <select class="gpa-select gpa-binary-input" data-id="${c.id}">
+          <option value="">--</option>
+          <option value="pass" ${grade === 'pass' ? 'selected' : ''}>Passed</option>
+          <option value="fail" ${grade === 'fail' ? 'selected' : ''}>Not Passed</option>
+        </select>
+      `;
+    }
+    
+    rowsHtml += `
+      <tr>
+        <td style="padding-left:1.5rem;">
+          <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${c.name}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">${c.code}</div>
+        </td>
+        <td>
+          <input type="number" class="gpa-input gpa-credit-input" data-id="${c.id}" value="${cred}" min="0" step="0.5">
+        </td>
+        <td>
+          <select class="gpa-select gpa-type-input" data-id="${c.id}">
+            <option value="numeric" ${type === 'numeric' ? 'selected' : ''}>Numeric Grade</option>
+            <option value="binary" ${type === 'binary' ? 'selected' : ''}>Pass/Fail</option>
+          </select>
+        </td>
+        <td>
+          <div style="position:relative;">
+            ${resultInputHtml}
+          </div>
+        </td>
+        <td style="text-align:center;">
+          <button class="gpa-btn-clear" data-id="${c.id}" title="Clear Grade">✕</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = rowsHtml;
+
+  // Populate What-If Course selectors
+  const whatIfCourseSelect = document.getElementById('gpa-whatif-course');
+  if (whatIfCourseSelect) {
+    let whatIfHtml = '<option value="">-- Choose Course --</option>';
+    courses.forEach(c => {
+      whatIfHtml += `<option value="${c.id}">${c.name}</option>`;
+    });
+    whatIfCourseSelect.innerHTML = whatIfHtml;
+  }
+
+  attachGpaListeners(courses);
+  updateGpaDashboard(courses, gradesData);
+  if (typeof calculateWhatIfGpa === 'function') calculateWhatIfGpa();
+}
+
+function attachGpaListeners(courses) {
+  const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
+
+  // Credits changes
+  document.querySelectorAll('.gpa-credit-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      let val = parseFloat(e.target.value);
+      if (isNaN(val) || val < 0) val = 0;
+      
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].credits = val;
+      
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  // Type changes (numeric vs binary)
+  document.querySelectorAll('.gpa-type-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      const val = e.target.value;
+      
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].type = val;
+      gradesData[id].grade = null; // reset grade on type switch
+      
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      renderGpaCalculator(); // full re-render to switch input UI
+    });
+  });
+
+  // Grade changes (numeric)
+  document.querySelectorAll('.gpa-grade-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const id = e.target.dataset.id;
+      let val = parseFloat(e.target.value);
+      
+      if (!gradesData[id]) gradesData[id] = {};
+      
+      if (isNaN(val)) {
+        gradesData[id].grade = null;
+      } else {
+        gradesData[id].grade = val;
+      }
+      
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  // Grade changes (binary)
+  document.querySelectorAll('.gpa-binary-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      const val = e.target.value;
+      
+      if (!gradesData[id]) gradesData[id] = {};
+      
+      if (val === '') {
+        gradesData[id].grade = null;
+      } else {
+        gradesData[id].grade = val;
+      }
+      
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  // Clear button
+  document.querySelectorAll('.gpa-btn-clear').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      if (gradesData[id]) {
+        gradesData[id].grade = null;
+        window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+        renderGpaCalculator(); // re-render to clear inputs visually
+      }
+    });
+  });
+
+  // Add Custom Course
+  const btnAddCustom = document.getElementById('btn-gpa-add-custom-course');
+  const customForm = document.getElementById('gpa-custom-form-container');
+  
+  if (btnAddCustom && !btnAddCustom.dataset.bound) {
+    btnAddCustom.dataset.bound = "true";
+    btnAddCustom.addEventListener('click', () => {
+      customForm.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-gpa-cancel-custom').addEventListener('click', () => {
+      customForm.classList.add('hidden');
+    });
+
+    document.getElementById('btn-gpa-save-custom').addEventListener('click', () => {
+      const name = document.getElementById('gpa-custom-course-name').value.trim();
+      if (!name) { alert('Please enter a course name.'); return; }
+      
+      const credits = parseFloat(document.getElementById('gpa-custom-course-credits').value) || 0;
+      
+      // Use existing Progress Custom Course API so it's unified
+      const course = window.api.addCustomProgressCourse(state.currentUser.id, { name, credits });
+      
+      // Also register it to tracks so it appears universally for numeric tracking
+      const trackedKey = `sp_tracked_${state.currentUser.id}_${state.currentUniId}`;
+      let tracked;
+      try { tracked = JSON.parse(localStorage.getItem(trackedKey)) || []; } catch(e) { tracked = []; }
+      tracked.push({ type: 'custom', id: course.id });
+      localStorage.setItem(trackedKey, JSON.stringify(tracked));
+
+      // Clear layout and refresh
+      document.getElementById('gpa-custom-course-name').value = '';
+      document.getElementById('gpa-custom-course-credits').value = '';
+      customForm.classList.add('hidden');
+      
+      renderGpaCalculator();
+    });
+  }
+
+  // What-If Listeners
+  const modeSelect = document.getElementById('gpa-whatif-mode');
+  if (modeSelect && !modeSelect.dataset.bound) {
+    modeSelect.dataset.bound = "true";
+    modeSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'existing') {
+        document.getElementById('gpa-whatif-existing-group').classList.remove('hidden');
+        document.getElementById('gpa-whatif-new-group').classList.add('hidden');
+      } else {
+        document.getElementById('gpa-whatif-existing-group').classList.add('hidden');
+        document.getElementById('gpa-whatif-new-group').classList.remove('hidden');
+      }
+      calculateWhatIfGpa();
+    });
+
+    ['gpa-whatif-course', 'gpa-whatif-credits', 'gpa-whatif-grade'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateWhatIfGpa);
+    });
+  }
+}
+
+function updateGpaDashboard(courses, gradesData) {
+  let totalCredits = 0;
+  let earnedCredits = 0;
+  
+  let gpaCredits = 0;
+  let sumGradeGpaCredits = 0;
+
+  courses.forEach(c => {
+    const data = gradesData[c.id] || {};
+    const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
+    const grade = data.grade;
+    const type = data.type || 'numeric';
+
+    totalCredits += cred;
+    
+    if (grade !== undefined && grade !== null && grade !== '') {
+      if (type === 'numeric') {
+        const numGrade = parseFloat(grade);
+        if (!isNaN(numGrade)) {
+          gpaCredits += cred;
+          sumGradeGpaCredits += (numGrade * cred);
+          if (numGrade >= 55) earnedCredits += cred; // Passing is 55+
+        }
+      } else if (type === 'binary') {
+        if (grade === 'pass') {
+          earnedCredits += cred;
+        }
+      }
+    }
+  });
+
+  document.getElementById('gpa-total-credits').textContent = totalCredits;
+  document.getElementById('gpa-graded-credits').textContent = earnedCredits;
+
+  const displayVal = document.getElementById('gpa-display-val');
+  const card = document.querySelector('.gpa-overall-card');
+
+  if (gpaCredits === 0) {
+    displayVal.textContent = '--';
+    card.style.borderColor = 'rgba(255,255,255,0.06)';
+    displayVal.style.color = 'var(--text-main)';
+  } else {
+    const gpa = (sumGradeGpaCredits / gpaCredits).toFixed(2);
+    displayVal.textContent = gpa;
+    
+    // Color coding
+    if (gpa >= 85) {
+      displayVal.style.color = '#10b981'; // Green
+      card.style.borderColor = 'rgba(16,185,129,0.3)';
+    } else if (gpa >= 70) {
+      displayVal.style.color = '#f59e0b'; // Yellow
+      card.style.borderColor = 'rgba(245,158,11,0.3)';
+    } else {
+      displayVal.style.color = '#ef4444'; // Red
+      card.style.borderColor = 'rgba(239,68,68,0.3)';
+    }
+  }
+}
+
+function calculateWhatIfGpa() {
+  const mode = document.getElementById('gpa-whatif-mode').value;
+  const gradeInput = document.getElementById('gpa-whatif-grade').value;
+  const simGrade = parseFloat(gradeInput);
+  
+  const resultDiv = document.getElementById('gpa-whatif-result');
+
+  let baseGpaCredits = 0;
+  let baseSum = 0;
+
+  const courses = getGpaCoursesList();
+  const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
+
+  // Re-calculate the exact baseline without assuming UI matches DB perfectly
+  courses.forEach(c => {
+    const data = gradesData[c.id] || {};
+    const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
+    const grade = data.grade;
+    const type = data.type || 'numeric';
+
+    if (type === 'numeric' && grade !== undefined && grade !== null && grade !== '') {
+      const numGrade = parseFloat(grade);
+      if (!isNaN(numGrade)) {
+        baseGpaCredits += cred;
+        baseSum += (numGrade * cred);
+      }
+    }
+  });
+
+  const baseGpa = baseGpaCredits > 0 ? (baseSum / baseGpaCredits) : 0;
+
+  if (isNaN(simGrade)) {
+    resultDiv.innerHTML = `Simulated GPA: <strong>--</strong>`;
+    return;
+  }
+
+  let simCredits = 0;
+  let simSum = baseSum;
+  let newTotalCredits = baseGpaCredits;
+
+  if (mode === 'existing') {
+    const courseId = document.getElementById('gpa-whatif-course').value;
+    if (!courseId) {
+      resultDiv.innerHTML = `Simulated GPA: <strong>--</strong>`;
+      return;
+    }
+    const c = courses.find(x => x.id === courseId);
+    if (!c) return;
+    const data = gradesData[c.id] || {};
+    simCredits = data.credits !== undefined ? data.credits : c.defaultCredits;
+    const type = data.type || 'numeric';
+    
+    // remove the old base if it was graded and numeric
+    if (type === 'numeric' && data.grade !== undefined && data.grade !== null && data.grade !== '') {
+      const oldGrade = parseFloat(data.grade);
+      if (!isNaN(oldGrade)) {
+        simSum -= (oldGrade * simCredits);
+      } else {
+        newTotalCredits += simCredits;
+      }
+    } else {
+      newTotalCredits += simCredits;
+    }
+    simSum += (simGrade * simCredits);
+
+  } else {
+    // New Course
+    simCredits = parseFloat(document.getElementById('gpa-whatif-credits').value);
+    if (isNaN(simCredits) || simCredits <= 0) {
+      resultDiv.innerHTML = `Simulated GPA: <strong>--</strong>`;
+      return;
+    }
+    newTotalCredits += simCredits;
+    simSum += (simGrade * simCredits);
+  }
+
+  if (newTotalCredits === 0) {
+    resultDiv.innerHTML = `Simulated GPA: <strong>--</strong>`;
+    return;
+  }
+
+  const newGpa = simSum / newTotalCredits;
+  const diff = newGpa - baseGpa;
+  let diffStr = '';
+  let color = 'var(--text-main)';
+
+  if (baseGpaCredits > 0) {
+    if (diff > 0.01) {
+      diffStr = ` <br><span style="color:#10b981; font-size:0.9rem;">(↑ +${diff.toFixed(2)})</span>`;
+      color = '#10b981';
+    } else if (diff < -0.01) {
+      diffStr = ` <br><span style="color:#ef4444; font-size:0.9rem;">(↓ ${diff.toFixed(2)})</span>`;
+      color = '#ef4444';
+    } else {
+      diffStr = ` <br><span style="color:var(--text-muted); font-size:0.9rem;">(No Change)</span>`;
+    }
+  }
+
+  resultDiv.innerHTML = `Simulated GPA: <strong style="color:${color}">${newGpa.toFixed(2)}</strong>${diffStr}`;
+}
+
 // ==================== START ====================
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  setupProgressListeners();
+  initMockupCarousel();
+});
+
+// ==================== MOCKUP CAROUSEL ====================
+function initMockupCarousel() {
+  const slides = document.querySelectorAll('.mockup-slide');
+  const dots   = document.querySelectorAll('.mockup-dot');
+  if (!slides.length) return;
+
+  let current = 0;
+  let timer;
+
+  function goTo(idx) {
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (idx + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+  }
+
+  function next() { goTo(current + 1); }
+
+  function startTimer() {
+    timer = setInterval(next, 3500);
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    startTimer();
+  }
+
+  // Dot click handlers
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      goTo(i);
+      resetTimer();
+    });
+  });
+
+  startTimer();
+}

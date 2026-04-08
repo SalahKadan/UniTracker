@@ -376,6 +376,119 @@ class DataStore {
     this.db.courseDetails[uniId][courseCode] = existing;
     this.saveData();
   }
+
+  // --- Semester Progress API ---
+  // Course structure (shared/public): lecture count, tutorial count, homework count
+  getCourseStructure(uniId, courseCode) {
+    if (!this.db.courseStructures) this.db.courseStructures = {};
+    if (!this.db.courseStructures[uniId]) this.db.courseStructures[uniId] = {};
+    return this.db.courseStructures[uniId][courseCode] || { lectures: 0, tutorials: 0, homeworks: 0 };
+  }
+
+  saveCourseStructure(uniId, courseCode, structData) {
+    if (!this.db.courseStructures) this.db.courseStructures = {};
+    if (!this.db.courseStructures[uniId]) this.db.courseStructures[uniId] = {};
+    const existing = this.db.courseStructures[uniId][courseCode] || {};
+    this.db.courseStructures[uniId][courseCode] = { ...existing, ...structData };
+    this.saveData();
+  }
+
+  // User progress (per-user): which items are checked
+  getUserProgress(userId, uniId, courseCode) {
+    if (!this.db.userProgress) this.db.userProgress = {};
+    const key = `${userId}__${uniId}__${courseCode}`;
+    return this.db.userProgress[key] || { lectures: [], tutorials: [], homeworks: [] };
+  }
+
+  saveUserProgress(userId, uniId, courseCode, progressData) {
+    if (!this.db.userProgress) this.db.userProgress = {};
+    const key = `${userId}__${uniId}__${courseCode}`;
+    this.db.userProgress[key] = progressData;
+    this.saveData();
+  }
+
+  // Custom courses for semester progress (user-created courses not in public catalog)
+  getCustomProgressCourses(userId) {
+    if (!this.db.customProgressCourses) this.db.customProgressCourses = {};
+    return this.db.customProgressCourses[userId] || [];
+  }
+
+  addCustomProgressCourse(userId, courseData) {
+    if (!this.db.customProgressCourses) this.db.customProgressCourses = {};
+    if (!this.db.customProgressCourses[userId]) this.db.customProgressCourses[userId] = [];
+    const newCourse = {
+      id: `cpc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      ...courseData
+    };
+    this.db.customProgressCourses[userId].push(newCourse);
+    this.saveData();
+    return newCourse;
+  }
+
+  updateCustomProgressCourse(userId, courseId, courseData) {
+    if (!this.db.customProgressCourses || !this.db.customProgressCourses[userId]) return false;
+    const idx = this.db.customProgressCourses[userId].findIndex(c => c.id === courseId);
+    if (idx !== -1) {
+      this.db.customProgressCourses[userId][idx] = { ...this.db.customProgressCourses[userId][idx], ...courseData };
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
+  removeCustomProgressCourse(userId, courseId) {
+    if (!this.db.customProgressCourses || !this.db.customProgressCourses[userId]) return false;
+    this.db.customProgressCourses[userId] = this.db.customProgressCourses[userId].filter(c => c.id !== courseId);
+    // Also remove progress data
+    if (this.db.userProgress) {
+      const key = `${userId}__custom__${courseId}`;
+      delete this.db.userProgress[key];
+    }
+    this.saveData();
+    return true;
+  }
+
+  // Custom progress course structure (per-user)
+  getCustomCourseStructure(userId, courseId) {
+    if (!this.db.customCourseStructures) this.db.customCourseStructures = {};
+    const key = `${userId}__${courseId}`;
+    return this.db.customCourseStructures[key] || { lectures: 0, tutorials: 0, homeworks: 0 };
+  }
+
+  saveCustomCourseStructure(userId, courseId, structData) {
+    if (!this.db.customCourseStructures) this.db.customCourseStructures = {};
+    const key = `${userId}__${courseId}`;
+    const existing = this.db.customCourseStructures[key] || {};
+    this.db.customCourseStructures[key] = { ...existing, ...structData };
+    this.saveData();
+  }
+
+  getCustomCourseProgress(userId, courseId) {
+    if (!this.db.userProgress) this.db.userProgress = {};
+    const key = `${userId}__custom__${courseId}`;
+    return this.db.userProgress[key] || { lectures: [], tutorials: [], homeworks: [] };
+  }
+
+  saveCustomCourseProgress(userId, courseId, progressData) {
+    if (!this.db.userProgress) this.db.userProgress = {};
+    const key = `${userId}__custom__${courseId}`;
+    this.db.userProgress[key] = progressData;
+    this.saveData();
+  }
+
+  // --- GPA Calculator API ---
+  getUserGrades(userId, uniId) {
+    if (!this.db.userGrades) this.db.userGrades = {};
+    const key = `${userId}__${uniId}`;
+    return this.db.userGrades[key] || {};
+  }
+
+  saveUserGrades(userId, uniId, gradesData) {
+    if (!this.db.userGrades) this.db.userGrades = {};
+    const key = `${userId}__${uniId}`;
+    this.db.userGrades[key] = gradesData;
+    this.saveData();
+  }
 }
 
 window.api = new DataStore();
