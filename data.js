@@ -125,7 +125,6 @@ class DataStore {
   }
 
   migrateGuestData(guestId, registeredId) {
-    // Migrate schedule
     if (this.db.schedules[guestId]) {
       if (!this.db.schedules[registeredId]) this.db.schedules[registeredId] = [];
       this.db.schedules[guestId].forEach(id => {
@@ -136,25 +135,76 @@ class DataStore {
       delete this.db.schedules[guestId];
     }
 
-    // Migrate todos
     if (this.db.todos) {
       this.db.todos.forEach(t => {
         if (t.userId === guestId) t.userId = registeredId;
       });
     }
 
-    // Migrate custom events
     if (this.db.customEvents) {
       this.db.customEvents.forEach(e => {
         if (e.userId === guestId) e.userId = registeredId;
       });
     }
 
-    // Migrate preferences
     if (this.db.preferences && this.db.preferences[guestId]) {
       if (!this.db.preferences[registeredId]) this.db.preferences[registeredId] = {};
       Object.assign(this.db.preferences[registeredId], this.db.preferences[guestId]);
       delete this.db.preferences[guestId];
+    }
+
+    this.saveData();
+  }
+
+  clearUserData(userId) {
+    // 1. Clear schedule
+    if (this.db.schedules) delete this.db.schedules[userId];
+    
+    // 2. Clear to-dos
+    if (this.db.todos) {
+      this.db.todos = this.db.todos.filter(t => t.userId !== userId);
+    }
+    
+    // 3. Clear custom events
+    if (this.db.customEvents) {
+      this.db.customEvents = this.db.customEvents.filter(e => e.userId !== userId);
+    }
+    
+    // 4. Clear user progress (Semester Progress)
+    if (this.db.userProgress) {
+      Object.keys(this.db.userProgress).forEach(key => {
+        if (key.startsWith(userId + '__')) {
+          delete this.db.userProgress[key];
+        }
+      });
+    }
+
+    // 5. Clear custom progress courses
+    if (this.db.customProgressCourses) {
+      delete this.db.customProgressCourses[userId];
+    }
+    
+    // 6. Clear custom course structures
+    if (this.db.customCourseStructures) {
+      Object.keys(this.db.customCourseStructures).forEach(key => {
+        if (key.startsWith(userId + '__')) {
+          delete this.db.customCourseStructures[key];
+        }
+      });
+    }
+
+    // 7. Clear user grades (GPA)
+    if (this.db.userGrades) {
+      Object.keys(this.db.userGrades).forEach(key => {
+        if (key.startsWith(userId + '__')) {
+          delete this.db.userGrades[key];
+        }
+      });
+    }
+
+    // 8. Clear preferences
+    if (this.db.preferences) {
+      delete this.db.preferences[userId];
     }
 
     this.saveData();

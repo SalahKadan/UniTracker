@@ -2773,23 +2773,32 @@ function confirmClearAllData() {
 
   const userId = state.currentUser.id;
   
-  // Clear all user-specific data
+  // 1. Clear database data via API
+  if (window.api && window.api.clearUserData) {
+    window.api.clearUserData(userId);
+  }
+  
+  // 2. Clear any lingering user-specific localStorage keys (redundant but safe)
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
+    // Remove keys like uniSchedule_sp_USERID, etc.
     if (key && key.includes(userId) && !key.includes('uniSchedule_session')) {
       keysToRemove.push(key);
     }
   }
   keysToRemove.forEach(k => localStorage.removeItem(k));
 
-  // Clear catalog state
+  // 3. Reset app state
   state.catalogCourseCodes = [];
+  state.previewCourseCodes = [];
   localStorage.removeItem('uniSchedule_catalogCodes');
 
+  // 4. Close modal and show feedback
   document.getElementById('modal-clear-data').classList.add('hidden');
 
-  // Re-render profile
+  // 5. Re-render UI (Go to dashboard to reflect changes)
+  loadDashboard();
   renderProfilePage();
   showProfileToast('🗑️ All data has been cleared successfully.');
 }
