@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=37">
 </head>
 
 <body>
@@ -21,9 +21,10 @@
     <div class="nav-links-landing">
       <a href="#features">Features</a>
       <a href="#universities">Universities</a>
-      <button class="btn-text" onclick="showView('auth')"
+      <button id="nav-landing-login" class="btn-text" onclick="showView('auth')"
         style="font-weight: 500; font-size: 0.95rem; margin-right: 0.5rem;">Login / Sign Up</button>
-      <button class="btn-primary btn-glow" onclick="enterGuestMode()">Get Started</button>
+      <button id="nav-landing-getstarted" class="btn-primary btn-glow" onclick="enterGuestMode()">Get Started</button>
+      <button id="nav-landing-workspace" class="btn-workspace-glow hidden" onclick="loadDashboard()">Workspace</button>
     </div>
   </nav>
 
@@ -1368,8 +1369,8 @@
     </div>
   </div>
 
-  <script src="data.js?v=35"></script>
-  <script src="script.js?v=35"></script>
+  <script src="data.js?v=37"></script>
+  <script src="script.js?v=37"></script>
 
 </body>
 

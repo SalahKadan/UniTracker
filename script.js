@@ -100,6 +100,12 @@ function init() {
     } else if (hash === 'progress') {
       loadCatalogState();
       loadSemesterProgress();
+    } else if (hash === 'gpa') {
+      loadCatalogState();
+      loadGpaCalculator();
+    } else if (hash === 'profile') {
+      loadCatalogState();
+      showView('profile');
     } else {
       loadCatalogState();
       loadDashboard();
@@ -161,6 +167,16 @@ function showView(viewId) {
   if (viewId === 'welcome') {
     navbar.classList.add('hidden');
     navbarLanding.classList.remove('hidden');
+    // If user is already logged in, show 'Workspace' and hide 'Get Started'
+    if (state.currentUser) {
+      document.getElementById('nav-landing-login').classList.add('hidden');
+      document.getElementById('nav-landing-getstarted').classList.add('hidden');
+      document.getElementById('nav-landing-workspace').classList.remove('hidden');
+    } else {
+      document.getElementById('nav-landing-login').classList.remove('hidden');
+      document.getElementById('nav-landing-getstarted').classList.remove('hidden');
+      document.getElementById('nav-landing-workspace').classList.add('hidden');
+    }
   } else if (viewId === 'auth') {
     navbar.classList.add('hidden');
     navbarLanding.classList.add('hidden');
