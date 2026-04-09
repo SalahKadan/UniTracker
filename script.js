@@ -2071,25 +2071,42 @@ function loadGpaCalculator() {
   renderGpaCalculator();
 }
 
+function getGpaSelectionKey() {
+  return `uniTracker_gpa_sel_${state.currentUser.id}_${state.currentUniId}`;
+}
+
+function getGpaSelectedIds() {
+  try {
+    const saved = localStorage.getItem(getGpaSelectionKey());
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  
+  // Default: Use catalog codes if no explicit selection exists
+  return state.catalogCourseCodes || [];
+}
+
+function saveGpaSelectedIds(ids) {
+  localStorage.setItem(getGpaSelectionKey(), JSON.stringify(ids));
+}
+
 function getGpaCoursesList() {
   const allCourses = window.api.getPublicCourses(state.currentUniId);
   const customProgressCourses = window.api.getCustomProgressCourses(state.currentUser.id) || [];
+  const selectedIds = getGpaSelectedIds();
   
   let list = [];
   
-  // 1. Catalog courses
-  const catalog = state.catalogCourseCodes || [];
-  catalog.forEach(code => {
-    const c = allCourses.find(x => x.code === code);
-    if (c && !list.find(x => x.id === code)) {
-      list.push({ id: code, name: c.name, code: c.code, defaultCredits: parseFloat(c.credits) || 0, isPublic: true });
-    }
-  });
-
-  // 2. Custom courses
-  customProgressCourses.forEach(c => {
-    if (!list.find(x => x.id === c.id)) {
-      list.push({ id: c.id, name: c.name, code: 'Custom', defaultCredits: c.credits || 0, isPublic: false });
+  selectedIds.forEach(id => {
+    // Check if it's a catalog course
+    const c = allCourses.find(x => x.code === id);
+    if (c) {
+      list.push({ id: c.code, name: c.name, code: c.code, defaultCredits: parseFloat(c.credits) || 0, isPublic: true });
+    } else {
+      // Check if it's a custom progress course
+      const cust = customProgressCourses.find(x => x.id === id);
+      if (cust) {
+        list.push({ id: cust.id, name: cust.name, code: 'Custom', defaultCredits: cust.credits || 0, isPublic: false });
+      }
     }
   });
 
@@ -2107,62 +2124,63 @@ function renderGpaCalculator() {
     tbody.innerHTML = '';
     emptyState.classList.remove('hidden');
     updateGpaDashboard(courses, gradesData);
-    return;
-  }
-  
-  emptyState.classList.add('hidden');
-  
-  let rowsHtml = '';
-
-  courses.forEach(c => {
-    const data = gradesData[c.id] || {};
-    const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
-    const grade = data.grade !== undefined && data.grade !== null ? data.grade : '';
-    const type = data.type || 'numeric'; // 'numeric' or 'binary'
-    
-    let resultInputHtml = '';
-    if (type === 'numeric') {
-      resultInputHtml = `<input type="number" class="gpa-input gpa-grade-input" data-id="${c.id}" value="${grade}" min="0" max="100" placeholder="--">`;
-    } else {
-      resultInputHtml = `
-        <select class="gpa-select gpa-binary-input" data-id="${c.id}">
-          <option value="">--</option>
-          <option value="pass" ${grade === 'pass' ? 'selected' : ''}>Passed</option>
-          <option value="fail" ${grade === 'fail' ? 'selected' : ''}>Not Passed</option>
-        </select>
-      `;
-    }
-    
-    rowsHtml += `
-      <tr>
-        <td style="padding-left:1.5rem;">
-          <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${c.name}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">${c.code}</div>
-        </td>
-        <td>
-          <input type="number" class="gpa-input gpa-credit-input" data-id="${c.id}" value="${cred}" min="0" step="0.5">
-        </td>
-        <td>
-          <select class="gpa-select gpa-type-input" data-id="${c.id}">
-            <option value="numeric" ${type === 'numeric' ? 'selected' : ''}>Numeric Grade</option>
-            <option value="binary" ${type === 'binary' ? 'selected' : ''}>Pass/Fail</option>
+  } else {
+    emptyState.classList.add('hidden');
+    let rowsHtml = '';
+    courses.forEach(c => {
+      const data = gradesData[c.id] || {};
+      const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
+      const grade = data.grade !== undefined && data.grade !== null ? data.grade : '';
+      const type = data.type || 'numeric';
+      
+      let resultInputHtml = '';
+      if (type === 'numeric') {
+        resultInputHtml = `<input type="number" class="gpa-input gpa-grade-input" data-id="${c.id}" value="${grade}" min="0" max="100" placeholder="--">`;
+      } else {
+        resultInputHtml = `
+          <select class="gpa-select gpa-binary-input" data-id="${c.id}">
+            <option value="">--</option>
+            <option value="pass" ${grade === 'pass' ? 'selected' : ''}>Pass</option>
+            <option value="fail" ${grade === 'fail' ? 'selected' : ''}>Fail</option>
           </select>
-        </td>
-        <td>
-          <div style="position:relative;">
-            ${resultInputHtml}
-          </div>
-        </td>
-        <td style="text-align:center;">
-          <button class="gpa-btn-clear" data-id="${c.id}" title="Clear Grade">✕</button>
-        </td>
-      </tr>
-    `;
-  });
+        `;
+      }
+      
+      rowsHtml += `
+        <tr>
+          <td data-label="Course" style="padding-left:1.5rem;">
+            <div style="font-weight:600; color:var(--text-main); font-size:0.95rem;">${c.name}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${c.code}</div>
+          </td>
+          <td data-label="Credits">
+            <input type="number" class="gpa-input gpa-credit-input" data-id="${c.id}" value="${cred}" min="0" step="0.5">
+          </td>
+          <td data-label="Grading Type">
+            <select class="gpa-select gpa-type-input" data-id="${c.id}">
+              <option value="numeric" ${type === 'numeric' ? 'selected' : ''}>Numeric</option>
+              <option value="binary" ${type === 'binary' ? 'selected' : ''}>Pass/Fail</option>
+            </select>
+          </td>
+          <td data-label="Final Result">
+            <div style="position:relative;">
+              ${resultInputHtml}
+            </div>
+          </td>
+          <td data-label="Action" style="text-align:center;">
+             <button class="gpa-btn-remove" data-id="${c.id}" title="Remove course">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                 <line x1="18" y1="6" x2="6" y2="18"></line>
+                 <line x1="6" y1="6" x2="18" y2="18"></line>
+               </svg>
+             </button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = rowsHtml;
+  }
 
-  tbody.innerHTML = rowsHtml;
-
-  // Populate What-If Course selectors
+  // Populate What-If
   const whatIfCourseSelect = document.getElementById('gpa-whatif-course');
   if (whatIfCourseSelect) {
     let whatIfHtml = '<option value="">-- Choose Course --</option>';
@@ -2174,130 +2192,145 @@ function renderGpaCalculator() {
 
   attachGpaListeners(courses);
   updateGpaDashboard(courses, gradesData);
-  if (typeof calculateWhatIfGpa === 'function') calculateWhatIfGpa();
 }
 
 function attachGpaListeners(courses) {
   const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
 
-  // Credits changes
-  document.querySelectorAll('.gpa-credit-input').forEach(input => {
-    input.addEventListener('change', (e) => {
-      const id = e.target.dataset.id;
-      let val = parseFloat(e.target.value);
-      if (isNaN(val) || val < 0) val = 0;
+  // Search Catalog Input
+  const searchInput = document.getElementById('gpa-catalog-search');
+  const resultsDiv = document.getElementById('gpa-search-results');
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = "true";
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) { resultsDiv.classList.add('hidden'); return; }
       
-      if (!gradesData[id]) gradesData[id] = {};
-      gradesData[id].credits = val;
+      const allPublic = window.api.getPublicCourses(state.currentUniId);
+      const matches = allPublic.filter(c => 
+        c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+      ).slice(0, 10);
       
-      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
-      updateGpaDashboard(courses, gradesData);
-    });
-  });
-
-  // Type changes (numeric vs binary)
-  document.querySelectorAll('.gpa-type-input').forEach(input => {
-    input.addEventListener('change', (e) => {
-      const id = e.target.dataset.id;
-      const val = e.target.value;
-      
-      if (!gradesData[id]) gradesData[id] = {};
-      gradesData[id].type = val;
-      gradesData[id].grade = null; // reset grade on type switch
-      
-      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
-      renderGpaCalculator(); // full re-render to switch input UI
-    });
-  });
-
-  // Grade changes (numeric)
-  document.querySelectorAll('.gpa-grade-input').forEach(input => {
-    input.addEventListener('input', (e) => {
-      const id = e.target.dataset.id;
-      let val = parseFloat(e.target.value);
-      
-      if (!gradesData[id]) gradesData[id] = {};
-      
-      if (isNaN(val)) {
-        gradesData[id].grade = null;
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding:1rem; color:var(--text-muted); text-align:center;">No courses found</div>';
       } else {
-        gradesData[id].grade = val;
+        let html = '';
+        const currentSel = getGpaSelectedIds();
+        matches.forEach(m => {
+          const isAdded = currentSel.includes(m.code);
+          html += `
+            <div class="gpa-result-item" onclick="addCourseToGpa('${m.code}')">
+              <div class="gpa-result-info">
+                <div class="gpa-result-name">${m.name}</div>
+                <div class="gpa-result-meta">${m.code} • ${m.credits} Credits</div>
+              </div>
+              <div class="gpa-result-add">${isAdded ? '✓' : '+'}</div>
+            </div>
+          `;
+        });
+        resultsDiv.innerHTML = html;
       }
-      
-      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
-      updateGpaDashboard(courses, gradesData);
+      resultsDiv.classList.remove('hidden');
     });
-  });
 
-  // Grade changes (binary)
-  document.querySelectorAll('.gpa-binary-input').forEach(input => {
-    input.addEventListener('change', (e) => {
-      const id = e.target.dataset.id;
-      const val = e.target.value;
-      
-      if (!gradesData[id]) gradesData[id] = {};
-      
-      if (val === '') {
-        gradesData[id].grade = null;
-      } else {
-        gradesData[id].grade = val;
-      }
-      
-      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
-      updateGpaDashboard(courses, gradesData);
-    });
-  });
-
-  // Clear button
-  document.querySelectorAll('.gpa-btn-clear').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.currentTarget.dataset.id;
-      if (gradesData[id]) {
-        gradesData[id].grade = null;
-        window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
-        renderGpaCalculator(); // re-render to clear inputs visually
+    // Close results when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.classList.add('hidden');
       }
     });
-  });
+  }
 
-  // Add Custom Course
-  const btnAddCustom = document.getElementById('btn-gpa-add-custom-course');
-  const customForm = document.getElementById('gpa-custom-form-container');
-  
-  if (btnAddCustom && !btnAddCustom.dataset.bound) {
-    btnAddCustom.dataset.bound = "true";
-    btnAddCustom.addEventListener('click', () => {
-      customForm.classList.remove('hidden');
+  // Toggles and Custom forms
+  const btnToggle = document.getElementById('btn-gpa-toggle-custom');
+  if (btnToggle && !btnToggle.dataset.bound) {
+    btnToggle.dataset.bound = "true";
+    btnToggle.addEventListener('click', () => {
+      const form = document.getElementById('gpa-custom-form-container');
+      form.classList.toggle('hidden');
     });
+  }
 
-    document.getElementById('btn-gpa-cancel-custom').addEventListener('click', () => {
-      customForm.classList.add('hidden');
-    });
-
-    document.getElementById('btn-gpa-save-custom').addEventListener('click', () => {
+  const btnSaveCustom = document.getElementById('btn-gpa-save-custom');
+  if (btnSaveCustom && !btnSaveCustom.dataset.bound) {
+    btnSaveCustom.dataset.bound = "true";
+    btnSaveCustom.addEventListener('click', () => {
       const name = document.getElementById('gpa-custom-course-name').value.trim();
-      if (!name) { alert('Please enter a course name.'); return; }
-      
       const credits = parseFloat(document.getElementById('gpa-custom-course-credits').value) || 0;
+      if (!name) return;
       
-      // Use existing Progress Custom Course API so it's unified
       const course = window.api.addCustomProgressCourse(state.currentUser.id, { name, credits });
+      const sel = getGpaSelectedIds();
+      if (!sel.includes(course.id)) {
+        sel.push(course.id);
+        saveGpaSelectedIds(sel);
+      }
       
-      // Also register it to tracks so it appears universally for numeric tracking
-      const trackedKey = `sp_tracked_${state.currentUser.id}_${state.currentUniId}`;
-      let tracked;
-      try { tracked = JSON.parse(localStorage.getItem(trackedKey)) || []; } catch(e) { tracked = []; }
-      tracked.push({ type: 'custom', id: course.id });
-      localStorage.setItem(trackedKey, JSON.stringify(tracked));
-
-      // Clear layout and refresh
       document.getElementById('gpa-custom-course-name').value = '';
       document.getElementById('gpa-custom-course-credits').value = '';
-      customForm.classList.add('hidden');
-      
+      document.getElementById('gpa-custom-form-container').classList.add('hidden');
       renderGpaCalculator();
     });
   }
+
+  document.getElementById('btn-gpa-cancel-custom').addEventListener('click', () => {
+    document.getElementById('gpa-custom-form-container').classList.add('hidden');
+  });
+
+  // Table Inputs
+  document.querySelectorAll('.gpa-credit-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const id = e.target.dataset.id;
+      let val = parseFloat(e.target.value) || 0;
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].credits = val;
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  document.querySelectorAll('.gpa-type-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].type = e.target.value;
+      gradesData[id].grade = null;
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      renderGpaCalculator();
+    });
+  });
+
+  document.querySelectorAll('.gpa-grade-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const id = e.target.dataset.id;
+      let val = e.target.value === '' ? null : parseFloat(e.target.value);
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].grade = val;
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  document.querySelectorAll('.gpa-binary-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      if (!gradesData[id]) gradesData[id] = {};
+      gradesData[id].grade = e.target.value === '' ? null : e.target.value;
+      window.api.saveUserGrades(state.currentUser.id, state.currentUniId, gradesData);
+      updateGpaDashboard(courses, gradesData);
+    });
+  });
+
+  // Remove Course from List
+  document.querySelectorAll('.gpa-btn-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.id;
+      let sel = getGpaSelectedIds();
+      sel = sel.filter(x => x !== id);
+      saveGpaSelectedIds(sel);
+      renderGpaCalculator();
+    });
+  });
 
   // What-If Listeners
   const modeSelect = document.getElementById('gpa-whatif-mode');
@@ -2318,6 +2351,17 @@ function attachGpaListeners(courses) {
       document.getElementById(id).addEventListener('input', calculateWhatIfGpa);
     });
   }
+}
+
+function addCourseToGpa(code) {
+  let sel = getGpaSelectedIds();
+  if (!sel.includes(code)) {
+    sel.push(code);
+    saveGpaSelectedIds(sel);
+  }
+  document.getElementById('gpa-catalog-search').value = '';
+  document.getElementById('gpa-search-results').classList.add('hidden');
+  renderGpaCalculator();
 }
 
 function updateGpaDashboard(courses, gradesData) {
