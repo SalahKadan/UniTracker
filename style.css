@@ -943,6 +943,22 @@ nav:not(.navbar-landing) {
   .hero-stat strong { font-size: 1.3rem; }
   .hero-stat span { font-size: 0.7rem; }
   
+  .hero-container {
+    grid-template-columns: 1fr;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 1rem;
+    gap: 2rem;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .mockup-carousel-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  
   /* Hero Carousel - show it on phone, just flat & smaller */
   .hero-visual { perspective: none; margin-top: 1.5rem; width: 100%; max-width: 100%; }
   .mockup-window { transform: none !important; animation: none !important; border-radius: 10px; width: 100%; }
