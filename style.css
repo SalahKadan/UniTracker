@@ -2112,4 +2112,16 @@ nav:not(.navbar-landing) {
   .profile-action-icon { width: 36px; height: 36px; }
   .profile-section-title { font-size: 0.85rem; }
   #profile-edit-form > div { grid-template-columns: 1fr !important; }
+
+  /* GPA Page Mobile Fixes */
+  .gpa-score { font-size: 3.5rem; letter-spacing: -1px; }
+  .gpa-score-scale { font-size: 1rem; }
+  .gpa-stats-row { gap: 1.25rem; flex-wrap: wrap; }
+  .gpa-stat-val { font-size: 1.1rem; }
+  .gpa-stat-lbl { font-size: 0.65rem; }
+  .gpa-dashboard-grid { gap: 1rem; }
+  .gpa-courses-section h3 { font-size: 1.1rem !important; }
+  .gpa-custom-btns { margin-top: 0.5rem; width: 100%; justify-content: flex-end; }
+  .gpa-custom-btns .btn-primary { flex: 1; }
 }
+
