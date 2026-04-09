@@ -905,7 +905,17 @@ nav:not(.navbar-landing) {
   
   /* App Nav */
   nav:not(.navbar-landing) { padding: 0.6rem 0.75rem; }
-  #nav-user-name { display: none; }
+  #nav-user-name { 
+    display: inline-block; 
+    max-width: 80px; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    font-size: 0.8rem;
+    vertical-align: middle;
+    border-left: none !important;
+    padding-left: 0.5rem !important;
+  }
   .nav-links { gap: 0.4rem; }
   #btn-logout { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
   #btn-auth-nav { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
