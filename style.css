@@ -2143,8 +2143,10 @@ nav:not(.navbar-landing) {
   }
 
   .mockup-body {
-    min-height: 180px;
+    height: 240px !important;
+    min-height: 240px !important;
     padding: 0.75rem !important;
+    overflow: hidden;
   }
 
   .mockup-indicators {
