@@ -2114,19 +2114,48 @@ nav:not(.navbar-landing) {
     box-sizing: border-box;
   }
 
-  /* Hero Carousel - show it on phone, just flat & smaller */
-  .hero-visual {
-    perspective: none;
-    margin-top: 1.5rem;
-    width: 100%;
-    max-width: 100%;
+  .hero-visual { perspective: none; margin-top: 1.5rem; width: 100%; max-width: 100%; }
+  
+  .mockup-slides {
+    height: 280px !important;
+    position: relative;
+    overflow: hidden;
   }
 
-  .mockup-window {
-    transform: none !important;
-    animation: none !important;
-    border-radius: 10px;
+  .mockup-slide {
+    position: absolute !important;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    display: block !important;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease;
+    animation: none !important;
+  }
+
+  .mockup-slide.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mockup-window { 
+    transform: none !important; 
+    animation: none !important; 
+    border-radius: 10px; 
+    width: 100%; 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mockup-body {
+    flex: 1;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0.75rem !important;
+    overflow: hidden;
   }
 
   .mockup-header {
@@ -2140,13 +2169,6 @@ nav:not(.navbar-landing) {
   .mockup-dots span {
     width: 7px;
     height: 7px;
-  }
-
-  .mockup-body {
-    height: 240px !important;
-    min-height: 240px !important;
-    padding: 0.75rem !important;
-    overflow: hidden;
   }
 
   .mockup-indicators {
