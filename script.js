@@ -6,7 +6,8 @@ const state = {
   previewCourseCodes: [],
   catalogCourseCodes: [],
   isGuest: false,
-  draggingItem: null
+  draggingItem: null,
+  draggingDuration: 60 // minutes
 };
 
 // Constants
@@ -954,7 +955,7 @@ function renderTimetable() {
     for (let d = 0; d < 5; d++) {
       html += `<div class="tt-cell-empty" data-day="${DAYS[d]}" data-hour="${hour}"
         style="grid-column:${d + 2}; grid-row:${row};"
-        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragover="handleDragOverEmpty(event, this)"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="handleDropGlobal(event, this)"
         onmousedown="selStart(event, this)"
@@ -1034,6 +1035,9 @@ function renderTimetable() {
   parsed.forEach(p => {
     html += buildBlock(p.item, p.isCustom, p.isPreview, p.colIndex || 0, p.totalCols || 1);
   });
+
+  // Drop Preview Ghost
+  html += `<div id="drop-preview" class="hidden" style="z-index:15; pointer-events:none; border:2px dashed var(--success); background:rgba(16,185,129,0.2); border-radius:6px; grid-column:2; grid-row:2;"></div>`;
 
   container.innerHTML = html;
 
@@ -1178,6 +1182,42 @@ function handleDragOverBlock(e, el) {
   if (!state.draggingItem || !state.draggingItem.isCustom) return;
   e.preventDefault();
   el.classList.add('drag-over-split');
+  
+  // Calculate day and hour from grid and mouse
+  const grid = document.getElementById('student-timetable');
+  const rect = grid.getBoundingClientRect();
+  const scrollTop = grid.scrollTop;
+  const relativeY = (e.clientY - rect.top) + scrollTop;
+  const hour = START_HOUR + Math.floor((relativeY - 40) / 60);
+  
+  const col = parseInt(window.getComputedStyle(el).gridColumnStart);
+  let day = 'Sunday';
+  for (const [d, c] of Object.entries(DAY_COL)) { if (c === col) { day = d; break; } }
+  
+  updateDropPreview(day, hour);
+}
+
+function updateDropPreview(day, hour) {
+  const preview = document.getElementById('drop-preview');
+  if (!preview || !state.draggingItem) return;
+  
+  const span = Math.max(1, Math.round(state.draggingDuration / 60));
+  const rowStart = 2 + (hour - START_HOUR);
+  const col = DAY_COL[day];
+  
+  if (col && rowStart >= 2) {
+    preview.style.gridColumn = col;
+    preview.style.gridRow = `${rowStart} / span ${span}`;
+    preview.classList.remove('hidden');
+  }
+}
+
+function handleDragOverEmpty(e, el) {
+  e.preventDefault();
+  el.classList.add('drag-over');
+  const day = el.dataset.day;
+  const hour = parseInt(el.dataset.hour);
+  updateDropPreview(day, hour);
 }
 
 function handleDragEnterBlock(e, el) {
@@ -1193,34 +1233,17 @@ function handleDropBlock(e, el) {
   e.preventDefault();
   el.classList.remove('drag-over-split');
   
-  // Find the day and hour of this block
-  // Since it's in a grid, we can get its grid-column and grid-row
+  // Map column back to day using grid position
   const style = window.getComputedStyle(el);
   const col = parseInt(style.gridColumnStart);
-  const row = parseInt(style.gridRowStart);
-  
-  // Map column back to day
   let day = 'Sunday';
   for (const [d, c] of Object.entries(DAY_COL)) {
     if (c === col) { day = d; break; }
   }
   
-  // Map row back to hour
-  const hour = START_HOUR + (row - 2);
-  
-  // Use the same logic as handleDropGlobal
-  // Create a mock cell object since handleDropGlobal expects a cell with dataset
-  const mockCell = {
-    dataset: {
-      day: day,
-      hour: hour
-    },
-    classList: {
-      remove: () => {}
-    }
-  };
-  
-  handleDropGlobal(e, mockCell);
+  // Pass the drop event to handleDropGlobal with the target day. 
+  // handleDropGlobal will now calculate the hour from the mouse coordinates.
+  handleDropGlobal(e, { dataset: { day }, classList: { remove: () => {} } });
 }
 
 window.handlePreviewSelect = (id) => {
@@ -1230,6 +1253,19 @@ window.handlePreviewSelect = (id) => {
 
 // ==================== DRAG & DROP ====================
 function handleDragStartGlobal(e, id, isCustom) {
+  let item;
+  if (isCustom) {
+    item = window.api.getCustomEvents(state.currentUser.id).find(x => x.id === id);
+  } else {
+    item = window.api.getPublicCourses(state.currentUniId).find(x => x.id === id);
+  }
+  
+  if (item) {
+    const s = item.start.split(':').map(Number);
+    const e = item.end.split(':').map(Number);
+    state.draggingDuration = (e[0] * 60 + e[1]) - (s[0] * 60 + s[1]);
+  }
+
   state.draggingItem = { id, isCustom };
   e.dataTransfer.setData('text/plain', JSON.stringify({ id, isCustom }));
   setTimeout(() => e.target.classList.add('dragging'), 0);
@@ -1238,14 +1274,30 @@ function handleDragEndGlobal(e) {
   e.target.classList.remove('dragging'); 
   state.draggingItem = null;
   document.querySelectorAll('.drag-over-split').forEach(el => el.classList.remove('drag-over-split'));
+  const preview = document.getElementById('drop-preview');
+  if (preview) preview.classList.add('hidden');
 }
 
 function handleDropGlobal(e, cell) {
   e.preventDefault();
   cell.classList.remove('drag-over');
+  
   const payload = JSON.parse(e.dataTransfer.getData('text/plain'));
   const newDay = cell.dataset.day;
-  const newHour = parseInt(cell.dataset.hour);
+  
+  // Calculate hour accurately from mouse position if dataset is missing (e.g. dropped on block)
+  // or use the dataset if available for cells
+  let newHour = parseInt(cell.dataset.hour);
+  
+  if (isNaN(newHour)) {
+    const grid = document.getElementById('student-timetable');
+    const rect = grid.getBoundingClientRect();
+    const scrollTop = grid.scrollTop;
+    const relativeY = (e.clientY - rect.top) + scrollTop;
+    // CSS uses 40px for header and 60px per hour row
+    newHour = START_HOUR + Math.floor((relativeY - 40) / 60);
+  }
+
   let oldStart, oldEnd;
 
   if (payload.isCustom) {
