@@ -5,7 +5,8 @@ const state = {
   authMode: 'login',
   previewCourseCodes: [],
   catalogCourseCodes: [],
-  isGuest: false
+  isGuest: false,
+  draggingItem: null
 };
 
 // Constants
@@ -1153,11 +1154,16 @@ function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols =
   return `<div class="course-block ${extraClass}" draggable="${!isPreview && isCustom}"
     ondragstart="${(!isPreview && isCustom) ? `handleDragStartGlobal(event, '${safeId}', ${isCustom})` : 'event.preventDefault()'}"
     ondragend="handleDragEndGlobal(event)"
+    ondragover="handleDragOverBlock(event, this)"
+    ondragenter="handleDragEnterBlock(event, this)"
+    ondragleave="handleDragLeaveBlock(event, this)"
+    ondrop="handleDropBlock(event, this)"
     onclick="${clickAction}"
     style="grid-column:${col}; grid-row:${rowStart} / span ${span};
       width:calc(${widthPct.toFixed(2)}% - 4px); margin-left:calc(${leftPct.toFixed(2)}% + 2px);
+      --total-cols:${totalCols}; --col-index:${colIndex};
       background:${bgColor}; color:#fff; padding:4px 5px;
-      border-radius:6px; font-size:0.75rem; overflow:hidden;
+      border-radius:6px; font-size:0.75rem;
       box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:5;
       position:relative;">
     ${badgeHTML}
@@ -1168,6 +1174,55 @@ function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols =
   </div>`;
 }
 
+function handleDragOverBlock(e, el) {
+  if (!state.draggingItem || !state.draggingItem.isCustom) return;
+  e.preventDefault();
+  el.classList.add('drag-over-split');
+}
+
+function handleDragEnterBlock(e, el) {
+  if (!state.draggingItem || !state.draggingItem.isCustom) return;
+  el.classList.add('drag-over-split');
+}
+
+function handleDragLeaveBlock(e, el) {
+  el.classList.remove('drag-over-split');
+}
+
+function handleDropBlock(e, el) {
+  e.preventDefault();
+  el.classList.remove('drag-over-split');
+  
+  // Find the day and hour of this block
+  // Since it's in a grid, we can get its grid-column and grid-row
+  const style = window.getComputedStyle(el);
+  const col = parseInt(style.gridColumnStart);
+  const row = parseInt(style.gridRowStart);
+  
+  // Map column back to day
+  let day = 'Sunday';
+  for (const [d, c] of Object.entries(DAY_COL)) {
+    if (c === col) { day = d; break; }
+  }
+  
+  // Map row back to hour
+  const hour = START_HOUR + (row - 2);
+  
+  // Use the same logic as handleDropGlobal
+  // Create a mock cell object since handleDropGlobal expects a cell with dataset
+  const mockCell = {
+    dataset: {
+      day: day,
+      hour: hour
+    },
+    classList: {
+      remove: () => {}
+    }
+  };
+  
+  handleDropGlobal(e, mockCell);
+}
+
 window.handlePreviewSelect = (id) => {
   window.api.addToSchedule(state.currentUser.id, id);
   renderStudentDashboard();
@@ -1175,10 +1230,15 @@ window.handlePreviewSelect = (id) => {
 
 // ==================== DRAG & DROP ====================
 function handleDragStartGlobal(e, id, isCustom) {
+  state.draggingItem = { id, isCustom };
   e.dataTransfer.setData('text/plain', JSON.stringify({ id, isCustom }));
   setTimeout(() => e.target.classList.add('dragging'), 0);
 }
-function handleDragEndGlobal(e) { e.target.classList.remove('dragging'); }
+function handleDragEndGlobal(e) { 
+  e.target.classList.remove('dragging'); 
+  state.draggingItem = null;
+  document.querySelectorAll('.drag-over-split').forEach(el => el.classList.remove('drag-over-split'));
+}
 
 function handleDropGlobal(e, cell) {
   e.preventDefault();
