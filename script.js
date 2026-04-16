@@ -239,7 +239,7 @@ function setupEventListeners() {
   // Hamburger Dropdown Toggle
   const btnHamburger = document.getElementById('btn-hamburger');
   const dropdownHamburger = document.getElementById('hamburger-dropdown');
-  
+
   if (btnHamburger && dropdownHamburger) {
     btnHamburger.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -343,7 +343,12 @@ function setupEventListeners() {
 
   // Modals — Request Course
   document.getElementById('btn-open-request-modal').addEventListener('click', () => {
+    const container = document.getElementById('req-meetings-container');
+    if (!container.children.length) resetMeetingRows();
     document.getElementById('modal-request').classList.remove('hidden');
+  });
+  document.getElementById('btn-add-meeting-row').addEventListener('click', () => {
+    createMeetingRow();
   });
   document.getElementById('close-request-modal').addEventListener('click', () => {
     document.getElementById('modal-request').classList.add('hidden');
@@ -549,7 +554,7 @@ function handleSearchAutocomplete(query) {
     dropdown.innerHTML = matches.map(c => `
       <div class="search-result-item" data-code="${c.code}" style="padding:0.5rem; cursor:pointer; border-radius:4px; transition:background 0.2s;">
         <div style="font-weight:600; font-size:0.9rem; color:var(--text-light);">${c.name}</div>
-        <div style="font-size:0.75rem; color:var(--text-muted);">${c.code} · ${c.faculty}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">${c.code}${c.faculty ? ' · ' + c.faculty : ''}</div>
       </div>
     `).join('');
 
@@ -717,7 +722,7 @@ function openCourseInfo(code) {
   document.getElementById('info-credits').textContent = sample.credits || '—';
 
   const details = window.api.getCourseDetails(state.currentUniId, code);
-  const desc = details.description || sample.description || `${sample.name} is a comprehensive course covering the foundational and advanced concepts required for mastering this discipline within the ${sample.faculty} department.`;
+  const desc = details.description || sample.description || `${sample.name} is a comprehensive course covering the foundational and advanced concepts required for mastering this discipline${sample.faculty ? ' within the ' + sample.faculty + ' department' : ''}.`;
 
   document.getElementById('info-description').textContent = desc;
   document.getElementById('info-description-input').value = desc;
@@ -1037,7 +1042,18 @@ function renderTimetable() {
   });
 
   // Drop Preview Ghost
-  html += `<div id="drop-preview" class="hidden" style="z-index:15; pointer-events:none; border:2px dashed var(--success); background:rgba(16,185,129,0.2); border-radius:6px; grid-column:2; grid-row:2;"></div>`;
+  html += `<div id="drop-preview" class="hidden" style="
+    z-index: 15; 
+    pointer-events: none; 
+    border: 2px dashed rgba(59, 130, 246, 0.6); 
+    background: rgba(59, 130, 246, 0.15); 
+    backdrop-filter: blur(3px); 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(59, 130, 246, 0.1);
+    grid-column: 2; 
+    grid-row: 2;
+    transition: grid-row 0.1s cubic-bezier(0.4, 0, 0.2, 1), grid-column 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  "></div>`;
 
   container.innerHTML = html;
 
@@ -1182,29 +1198,29 @@ function handleDragOverBlock(e, el) {
   if (!state.draggingItem || !state.draggingItem.isCustom) return;
   e.preventDefault();
   el.classList.add('drag-over-split');
-  
+
   // Calculate day and hour from grid and mouse
   const grid = document.getElementById('student-timetable');
   const rect = grid.getBoundingClientRect();
   const scrollTop = grid.scrollTop;
   const relativeY = (e.clientY - rect.top) + scrollTop;
   const hour = START_HOUR + Math.floor((relativeY - 40) / 60);
-  
+
   const col = parseInt(window.getComputedStyle(el).gridColumnStart);
   let day = 'Sunday';
   for (const [d, c] of Object.entries(DAY_COL)) { if (c === col) { day = d; break; } }
-  
+
   updateDropPreview(day, hour);
 }
 
 function updateDropPreview(day, hour) {
   const preview = document.getElementById('drop-preview');
   if (!preview || !state.draggingItem) return;
-  
+
   const span = Math.max(1, Math.round(state.draggingDuration / 60));
   const rowStart = 2 + (hour - START_HOUR);
   const col = DAY_COL[day];
-  
+
   if (col && rowStart >= 2) {
     preview.style.gridColumn = col;
     preview.style.gridRow = `${rowStart} / span ${span}`;
@@ -1232,7 +1248,7 @@ function handleDragLeaveBlock(e, el) {
 function handleDropBlock(e, el) {
   e.preventDefault();
   el.classList.remove('drag-over-split');
-  
+
   // Map column back to day using grid position
   const style = window.getComputedStyle(el);
   const col = parseInt(style.gridColumnStart);
@@ -1240,10 +1256,10 @@ function handleDropBlock(e, el) {
   for (const [d, c] of Object.entries(DAY_COL)) {
     if (c === col) { day = d; break; }
   }
-  
+
   // Pass the drop event to handleDropGlobal with the target day. 
   // handleDropGlobal will now calculate the hour from the mouse coordinates.
-  handleDropGlobal(e, { dataset: { day }, classList: { remove: () => {} } });
+  handleDropGlobal(e, { dataset: { day }, classList: { remove: () => { } } });
 }
 
 window.handlePreviewSelect = (id) => {
@@ -1259,7 +1275,7 @@ function handleDragStartGlobal(e, id, isCustom) {
   } else {
     item = window.api.getPublicCourses(state.currentUniId).find(x => x.id === id);
   }
-  
+
   if (item) {
     const s = item.start.split(':').map(Number);
     const e = item.end.split(':').map(Number);
@@ -1270,8 +1286,8 @@ function handleDragStartGlobal(e, id, isCustom) {
   e.dataTransfer.setData('text/plain', JSON.stringify({ id, isCustom }));
   setTimeout(() => e.target.classList.add('dragging'), 0);
 }
-function handleDragEndGlobal(e) { 
-  e.target.classList.remove('dragging'); 
+function handleDragEndGlobal(e) {
+  e.target.classList.remove('dragging');
   state.draggingItem = null;
   document.querySelectorAll('.drag-over-split').forEach(el => el.classList.remove('drag-over-split'));
   const preview = document.getElementById('drop-preview');
@@ -1281,14 +1297,14 @@ function handleDragEndGlobal(e) {
 function handleDropGlobal(e, cell) {
   e.preventDefault();
   cell.classList.remove('drag-over');
-  
+
   const payload = JSON.parse(e.dataTransfer.getData('text/plain'));
   const newDay = cell.dataset.day;
-  
+
   // Calculate hour accurately from mouse position if dataset is missing (e.g. dropped on block)
   // or use the dataset if available for cells
   let newHour = parseInt(cell.dataset.hour);
-  
+
   if (isNaN(newHour)) {
     const grid = document.getElementById('student-timetable');
     const rect = grid.getBoundingClientRect();
@@ -1420,47 +1436,126 @@ function submitCustomEvent() {
 }
 
 // ==================== CREATE COURSE ====================
+function createMeetingRow(data = {}) {
+  const container = document.getElementById('req-meetings-container');
+  const row = document.createElement('div');
+  row.className = 'meeting-row card';
+  row.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1rem; position: relative; margin-bottom: 0.5rem; border-radius: 8px;';
+
+  row.innerHTML = `
+    <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.5rem;">
+      <button type="button" class="btn-text btn-duplicate-meeting" style="font-size: 1rem; padding: 0.2rem;" title="Duplicate">⧉</button>
+      <button type="button" class="btn-text btn-remove-meeting" style="color: var(--danger); font-size: 1.2rem; padding: 0.2rem; line-height: 1;" title="Remove">&times;</button>
+    </div>
+    <div class="form-grid" style="margin-top: 0.5rem;">
+      <div class="form-group">
+        <label>Type</label>
+        <select class="req-meeting-type" required>
+          <option value="lecture" ${data.type === 'lecture' ? 'selected' : ''}>Lecture</option>
+          <option value="tutorial" ${data.type === 'tutorial' ? 'selected' : ''}>Tutorial</option>
+          <option value="lab" ${data.type === 'lab' ? 'selected' : ''}>Lab</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Group Number</label><input type="text" class="req-meeting-group" placeholder="e.g. 10" value="${data.group || ''}"></div>
+      <div class="form-group">
+        <label>Day</label>
+        <select class="req-meeting-day" required>
+          <option value="Sunday" ${data.day === 'Sunday' ? 'selected' : ''}>Sunday</option>
+          <option value="Monday" ${data.day === 'Monday' ? 'selected' : ''}>Monday</option>
+          <option value="Tuesday" ${data.day === 'Tuesday' ? 'selected' : ''}>Tuesday</option>
+          <option value="Wednesday" ${data.day === 'Wednesday' ? 'selected' : ''}>Wednesday</option>
+          <option value="Thursday" ${data.day === 'Thursday' ? 'selected' : ''}>Thursday</option>
+          <option value="Friday" ${data.day === 'Friday' ? 'selected' : ''}>Friday</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Start Time</label><input type="time" class="req-meeting-start" required value="${data.start || ''}"></div>
+      <div class="form-group"><label>End Time</label><input type="time" class="req-meeting-end" required value="${data.end || ''}"></div>
+      <div class="form-group"><label>Lecturer</label><input type="text" class="req-meeting-lecturer" required value="${data.lecturer || ''}"></div>
+      <div class="form-group"><label>Room</label><input type="text" class="req-meeting-room" required value="${data.room || ''}"></div>
+    </div>
+  `;
+
+  row.querySelector('.btn-remove-meeting').addEventListener('click', () => {
+    if (container.children.length > 1) {
+      row.remove();
+    } else {
+      alert("You need at least one meeting setup for the course.");
+    }
+  });
+
+  row.querySelector('.btn-duplicate-meeting').addEventListener('click', () => {
+    const currentData = {
+      type: row.querySelector('.req-meeting-type').value,
+      group: row.querySelector('.req-meeting-group').value,
+      day: row.querySelector('.req-meeting-day').value,
+      lecturer: row.querySelector('.req-meeting-lecturer').value,
+      start: row.querySelector('.req-meeting-start').value,
+      end: row.querySelector('.req-meeting-end').value,
+      room: row.querySelector('.req-meeting-room').value
+    };
+    createMeetingRow(currentData);
+  });
+
+  container.appendChild(row);
+}
+
+function resetMeetingRows() {
+  const container = document.getElementById('req-meetings-container');
+  if (container) {
+    container.innerHTML = '';
+    createMeetingRow();
+  }
+}
+
 function submitCourseRequest() {
-  const courseData = {
+  const commonData = {
     uniId: state.currentUniId,
     name: document.getElementById('req-name').value,
     code: document.getElementById('req-code').value,
     faculty: document.getElementById('req-faculty').value,
-    type: document.getElementById('req-type').value,
-    lecturer: document.getElementById('req-lecturer').value,
-    room: document.getElementById('req-room').value,
-    day: document.getElementById('req-day').value,
-    start: document.getElementById('req-start').value,
-    end: document.getElementById('req-end').value,
-    group: document.getElementById('req-group').value,
     credits: document.getElementById('req-credits').value || '0',
     notes: document.getElementById('req-notes').value
   };
 
-  const newCourse = window.api.createCourse(courseData);
+  const meetingRows = document.querySelectorAll('.meeting-row');
+  if (meetingRows.length === 0) {
+    alert("Please add at least one meeting.");
+    return;
+  }
+
+  meetingRows.forEach(row => {
+    const courseData = {
+      ...commonData,
+      type: row.querySelector('.req-meeting-type').value,
+      group: row.querySelector('.req-meeting-group').value,
+      day: row.querySelector('.req-meeting-day').value,
+      lecturer: row.querySelector('.req-meeting-lecturer').value,
+      start: row.querySelector('.req-meeting-start').value,
+      end: row.querySelector('.req-meeting-end').value,
+      room: row.querySelector('.req-meeting-room').value
+    };
+    window.api.createCourse(courseData);
+  });
 
   // Save exams data if provided
   const moeda = document.getElementById('req-moeda').value;
   const moedb = document.getElementById('req-moedb').value;
   if (moeda || moedb) {
-    window.api.saveCourseExams(state.currentUniId, courseData.code, { moeda, moedb });
+    window.api.saveCourseExams(state.currentUniId, commonData.code, { moeda, moedb });
   }
 
-  // Don't automatically add the newly created course section to the user's schedule.
-  // Instead, just make sure it's in the catalog so the user can 'pick' sessions via visibility mode.
-  // window.api.addToSchedule(state.currentUser.id, newCourse.id);
-
-  if (state.catalogCourseCodes && !state.catalogCourseCodes.includes(courseData.code)) {
-    state.catalogCourseCodes.push(courseData.code);
+  if (state.catalogCourseCodes && !state.catalogCourseCodes.includes(commonData.code)) {
+    state.catalogCourseCodes.push(commonData.code);
     saveCatalogState();
   }
 
   document.getElementById('form-request-course').reset();
+  resetMeetingRows();
   document.getElementById('modal-request').classList.add('hidden');
 
   // Enter visibility mode for the new course immediately so they can pick sessions
   if (!state.previewCourseCodes) state.previewCourseCodes = [];
-  if (!state.previewCourseCodes.includes(courseData.code)) state.previewCourseCodes.push(courseData.code);
+  if (!state.previewCourseCodes.includes(commonData.code)) state.previewCourseCodes.push(commonData.code);
 
   renderStudentDashboard();
 }
@@ -1708,7 +1803,7 @@ function loadSemesterProgress() {
   renderSemesterProgress();
 }
 
-window.switchProgressTab = function(tab) {
+window.switchProgressTab = function (tab) {
   document.querySelectorAll('.sp-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`.sp-tab[data-tab="${tab}"]`).classList.add('active');
   document.getElementById('sp-tab-catalog').classList.toggle('hidden', tab !== 'catalog');
@@ -1766,7 +1861,7 @@ function renderCatalogForProgress() {
   `).join('');
 }
 
-window.addPublicCourseToProgress = function(code) {
+window.addPublicCourseToProgress = function (code) {
   const tracked = getTrackedCourses();
   if (tracked.find(t => t.type === 'public' && t.code === code)) return;
 
@@ -2045,7 +2140,7 @@ function attachProgressCardListeners() {
 
       // Surgically Update local DOM stats without re-rendering card entirely
       const card = cell.closest('.sp-card');
-      
+
       // 1. Update checking row (e.g., 5/13)
       const row = cell.closest('.sp-row');
       if (row) {
@@ -2061,10 +2156,10 @@ function attachProgressCardListeners() {
         + Math.min(progress.tutorials.length, structure.tutorials || 0)
         + Math.min(progress.homeworks.length, structure.homeworks || 0);
       const pct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
-      
+
       const pctLabel = card.querySelector('.sp-card-pct');
       if (pctLabel) pctLabel.textContent = `${pct}%`;
-      
+
       const barFill = card.querySelector('.sp-card-bar-fill');
       if (barFill) barFill.style.width = `${pct}%`;
 
@@ -2191,8 +2286,8 @@ function getGpaSelectedIds() {
   try {
     const saved = localStorage.getItem(getGpaSelectionKey());
     if (saved) return JSON.parse(saved);
-  } catch (e) {}
-  
+  } catch (e) { }
+
   // Default: Use catalog codes if no explicit selection exists
   return state.catalogCourseCodes || [];
 }
@@ -2205,9 +2300,9 @@ function getGpaCoursesList() {
   const allCourses = window.api.getPublicCourses(state.currentUniId);
   const customProgressCourses = window.api.getCustomProgressCourses(state.currentUser.id) || [];
   const selectedIds = getGpaSelectedIds();
-  
+
   let list = [];
-  
+
   selectedIds.forEach(id => {
     // Check if it's a catalog course
     const c = allCourses.find(x => x.code === id);
@@ -2228,7 +2323,7 @@ function getGpaCoursesList() {
 function renderGpaCalculator() {
   const courses = getGpaCoursesList();
   const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
-  
+
   const tbody = document.getElementById('gpa-table-body');
   const emptyState = document.getElementById('gpa-empty-state');
 
@@ -2244,7 +2339,7 @@ function renderGpaCalculator() {
       const cred = data.credits !== undefined ? data.credits : c.defaultCredits;
       const grade = data.grade !== undefined && data.grade !== null ? data.grade : '';
       const type = data.type || 'numeric';
-      
+
       let resultInputHtml = '';
       if (type === 'numeric') {
         resultInputHtml = `<input type="number" class="gpa-input gpa-grade-input" data-id="${c.id}" value="${grade}" min="0" max="100" placeholder="--">`;
@@ -2257,7 +2352,7 @@ function renderGpaCalculator() {
           </select>
         `;
       }
-      
+
       rowsHtml += `
         <tr>
           <td data-label="Course" style="padding-left:1.5rem;">
@@ -2317,12 +2412,12 @@ function attachGpaListeners(courses) {
     searchInput.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
       if (!q) { resultsDiv.classList.add('hidden'); return; }
-      
+
       const allPublic = window.api.getPublicCourses(state.currentUniId);
-      const matches = allPublic.filter(c => 
+      const matches = allPublic.filter(c =>
         c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
       ).slice(0, 10);
-      
+
       if (matches.length === 0) {
         resultsDiv.innerHTML = '<div style="padding:1rem; color:var(--text-muted); text-align:center;">No courses found</div>';
       } else {
@@ -2370,14 +2465,14 @@ function attachGpaListeners(courses) {
       const name = document.getElementById('gpa-custom-course-name').value.trim();
       const credits = parseFloat(document.getElementById('gpa-custom-course-credits').value) || 0;
       if (!name) return;
-      
+
       const course = window.api.addCustomProgressCourse(state.currentUser.id, { name, credits });
       const sel = getGpaSelectedIds();
       if (!sel.includes(course.id)) {
         sel.push(course.id);
         saveGpaSelectedIds(sel);
       }
-      
+
       document.getElementById('gpa-custom-course-name').value = '';
       document.getElementById('gpa-custom-course-credits').value = '';
       document.getElementById('gpa-custom-form-container').classList.add('hidden');
@@ -2479,7 +2574,7 @@ function addCourseToGpa(code) {
 function updateGpaDashboard(courses, gradesData) {
   let totalCredits = 0;
   let earnedCredits = 0;
-  
+
   let gpaCredits = 0;
   let sumGradeGpaCredits = 0;
 
@@ -2490,7 +2585,7 @@ function updateGpaDashboard(courses, gradesData) {
     const type = data.type || 'numeric';
 
     totalCredits += cred;
-    
+
     if (grade !== undefined && grade !== null && grade !== '') {
       if (type === 'numeric') {
         const numGrade = parseFloat(grade);
@@ -2520,7 +2615,7 @@ function updateGpaDashboard(courses, gradesData) {
   } else {
     const gpa = (sumGradeGpaCredits / gpaCredits).toFixed(2);
     displayVal.textContent = gpa;
-    
+
     // Color coding
     if (gpa >= 85) {
       displayVal.style.color = '#10b981'; // Green
@@ -2539,7 +2634,7 @@ function calculateWhatIfGpa() {
   const mode = document.getElementById('gpa-whatif-mode').value;
   const gradeInput = document.getElementById('gpa-whatif-grade').value;
   const simGrade = parseFloat(gradeInput);
-  
+
   const resultDiv = document.getElementById('gpa-whatif-result');
 
   let baseGpaCredits = 0;
@@ -2586,7 +2681,7 @@ function calculateWhatIfGpa() {
     const data = gradesData[c.id] || {};
     simCredits = data.credits !== undefined ? data.credits : c.defaultCredits;
     const type = data.type || 'numeric';
-    
+
     // remove the old base if it was graded and numeric
     if (type === 'numeric' && data.grade !== undefined && data.grade !== null && data.grade !== '') {
       const oldGrade = parseFloat(data.grade);
@@ -2646,7 +2741,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== MOCKUP CAROUSEL ====================
 function initMockupCarousel() {
   const slides = document.querySelectorAll('.mockup-slide');
-  const dots   = document.querySelectorAll('.mockup-dot');
+  const dots = document.querySelectorAll('.mockup-dot');
   if (!slides.length) return;
 
   let current = 0;
@@ -2689,7 +2784,7 @@ function renderProfilePage() {
   // Identity
   const username = state.isGuest ? 'Guest' : (state.currentUser.username || 'User');
   const email = state.currentUser.email || (state.isGuest ? 'guest@unitracker.local' : '—');
-  
+
   document.getElementById('profile-username').textContent = username;
   document.getElementById('profile-email').textContent = email;
 
@@ -2707,7 +2802,7 @@ function renderProfilePage() {
   // Academic stats
   const courses = typeof getGpaCoursesList === 'function' ? getGpaCoursesList() : [];
   const gradesData = window.api.getUserGrades(state.currentUser.id, state.currentUniId);
-  
+
   let totalCredits = 0;
   let earnedCredits = 0;
   let gpaCredits = 0;
@@ -2916,7 +3011,7 @@ function submitFeedback(e) {
   e.preventDefault();
   const subject = document.getElementById('feedback-subject').value.trim();
   const details = document.getElementById('feedback-details').value.trim();
-  
+
   if (!subject || !details) return;
 
   // Store feedback in localStorage
@@ -2944,12 +3039,12 @@ function confirmClearAllData() {
   if (!state.currentUser) return;
 
   const userId = state.currentUser.id;
-  
+
   // 1. Clear database data via API
   if (window.api && window.api.clearUserData) {
     window.api.clearUserData(userId);
   }
-  
+
   // 2. Clear any lingering user-specific localStorage keys (redundant but safe)
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {

@@ -1723,11 +1723,7 @@ nav:not(.navbar-landing) {
 }
 
 .course-block.drag-over-split {
-  opacity: 0.9;
-  filter: brightness(1.2);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: -2px;
+  /* Glow removed per user request. The drop-preview renders safely above it. */
 }
 
 .course-block:hover {
@@ -1740,8 +1736,9 @@ nav:not(.navbar-landing) {
 }
 
 .course-block.dragging {
-  opacity: 0.5;
-  box-shadow: var(--glow);
+  opacity: 0.3 !important;
+  transform: scale(0.95);
+  box-shadow: none;
   z-index: 20;
 }
 
@@ -1773,7 +1770,7 @@ nav:not(.navbar-landing) {
 }
 
 .tt-cell-empty.drag-over {
-  background: rgba(59, 130, 246, 0.15);
+  /* Let #drop-preview handle the shading instead */
 }
 
 .tt-cell-empty.sel-active {
@@ -2488,6 +2485,9 @@ nav:not(.navbar-landing) {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+  .form-grid .form-group, .form-grid [style*="grid-column"] {
+    grid-column: 1 / -1 !important;
   }
 
   /* ===== Auth ===== */
