@@ -345,6 +345,7 @@ function setupEventListeners() {
   document.getElementById('btn-open-request-modal').addEventListener('click', () => {
     const container = document.getElementById('req-meetings-container');
     if (!container.children.length) resetMeetingRows();
+    document.getElementById('create-course-error').classList.add('hidden');
     document.getElementById('modal-request').classList.remove('hidden');
   });
   document.getElementById('btn-add-meeting-row').addEventListener('click', () => {
@@ -1517,11 +1518,30 @@ function submitCourseRequest() {
     notes: document.getElementById('req-notes').value
   };
 
-  const meetingRows = document.querySelectorAll('.meeting-row');
-  if (meetingRows.length === 0) {
-    alert("Please add at least one meeting.");
+  const errorDiv = document.getElementById('create-course-error');
+  const errorMsg = document.getElementById('create-course-error-msg');
+  const modalContent = document.querySelector('#modal-request .modal-content');
+
+  const triggerError = (msg) => {
+    errorMsg.textContent = msg;
+    errorDiv.classList.remove('hidden');
+    modalContent.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const existingCourses = window.api.getPublicCourses(state.currentUniId);
+  const codeExists = existingCourses.some(c => c.code.toLowerCase() === commonData.code.trim().toLowerCase());
+  if (codeExists) {
+    triggerError(`A course with the code "${commonData.code}" already exists in the catalog.`);
     return;
   }
+
+  const meetingRows = document.querySelectorAll('.meeting-row');
+  if (meetingRows.length === 0) {
+    triggerError("Please add at least one meeting before saving.");
+    return;
+  }
+
+  errorDiv.classList.add('hidden');
 
   meetingRows.forEach(row => {
     const courseData = {

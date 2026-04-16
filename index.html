@@ -1108,6 +1108,10 @@
     <div class="modal-content card" style="max-width: 800px; width: 95%;">
       <span class="close-modal" id="close-request-modal">&times;</span>
       <h2 style="margin-bottom: 1rem;">Create New Course</h2>
+      <div id="create-course-error" class="hidden" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: #fca5a5; padding: 0.8rem 1rem; border-radius: 6px; margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span id="create-course-error-msg"></span>
+      </div>
       <form id="form-request-course">
         <h3 style="font-size: 1rem; color: var(--text-light); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">General Details</h3>
         <div class="form-grid">
