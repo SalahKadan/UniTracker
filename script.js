@@ -41,7 +41,8 @@ const views = {
   todo: document.getElementById('view-todo'),
   progress: document.getElementById('view-progress'),
   gpa: document.getElementById('view-gpa'),
-  profile: document.getElementById('view-profile')
+  profile: document.getElementById('view-profile'),
+  timer: document.getElementById('view-timer')
 };
 const navbar = document.getElementById('navbar');
 const navbarLanding = document.getElementById('navbar-landing');
@@ -108,6 +109,9 @@ function init() {
     } else if (hash === 'profile') {
       loadCatalogState();
       showView('profile');
+    } else if (hash === 'timer') {
+      loadCatalogState();
+      loadTimer();
     } else {
       loadCatalogState();
       loadDashboard();
@@ -118,6 +122,9 @@ function init() {
     } else if (hash === 'gpa') {
       loadCatalogState();
       loadGpaCalculator();
+    } else if (hash === 'timer') {
+      loadCatalogState();
+      loadTimer();
     } else {
       showView('welcome');
     }
@@ -3107,4 +3114,245 @@ function showProfileToast(message) {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 400);
   }, 3000);
+}
+
+// ==================== STUDY TIMER ====================
+let timerInterval = null;
+let timerMode = 'countup'; // 'countup' or 'countdown'
+let timerStartTimestamp = 0; // The wall clock time when timer was started
+let timerOffset = 0; // Accumulated time in ms before the current start
+let timerDuration = 0; // Total duration in ms for countdown mode
+let isTimerRunning = false;
+
+function loadTimer() {
+  showView('timer');
+  // Initialize duration displays when visited
+  if (timerMode === 'countdown' && !isTimerRunning && timerOffset === 0) {
+    const h = parseInt(document.getElementById('timer-input-hours').value) || 0;
+    const m = parseInt(document.getElementById('timer-input-minutes').value) || 0;
+    const s = parseInt(document.getElementById('timer-input-seconds').value) || 0;
+    const initialDuration = (h * 3600 + m * 60 + s);
+    displayTime(initialDuration);
+  }
+}
+
+function switchTimerMode(mode) {
+  if (isTimerRunning) {
+    if (!confirm("Are you sure you want to switch mode? The current timer connection will be reset.")) {
+      return;
+    }
+  }
+  
+  pauseTimer();
+  
+  timerMode = mode;
+  
+  // UI Update
+  document.getElementById('tab-countup').classList.toggle('active', mode === 'countup');
+  document.getElementById('tab-countdown').classList.toggle('active', mode === 'countdown');
+  
+  if (mode === 'countdown') {
+    document.getElementById('timer-inputs').classList.remove('hidden-animated');
+    const h = parseInt(document.getElementById('timer-input-hours').value) || 0;
+    const m = parseInt(document.getElementById('timer-input-minutes').value) || 0;
+    const s = parseInt(document.getElementById('timer-input-seconds').value) || 0;
+    displayTime(h * 3600 + m * 60 + s);
+  } else {
+    document.getElementById('timer-inputs').classList.add('hidden-animated');
+    displayTime(0);
+  }
+  
+  timerOffset = 0;
+  timerStartTimestamp = 0;
+}
+
+// Ensure inputs update the display when countdown is paused/idle
+['timer-input-hours', 'timer-input-minutes', 'timer-input-seconds'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', () => {
+      if (timerMode === 'countdown' && !isTimerRunning) {
+        // user is changing initial duration manually
+        const h = parseInt(document.getElementById('timer-input-hours').value) || 0;
+        const m = parseInt(document.getElementById('timer-input-minutes').value) || 0;
+        const s = parseInt(document.getElementById('timer-input-seconds').value) || 0;
+        timerOffset = 0; // reset any paused progress on change
+        timerDuration = (h * 3600 + m * 60 + s) * 1000;
+        displayTime(h * 3600 + m * 60 + s);
+      }
+    });
+  }
+});
+
+function startTimer() {
+  if (isTimerRunning) return;
+  
+  if (timerMode === 'countdown' && timerOffset === 0) {
+    // initialize duration for countdown
+    const h = parseInt(document.getElementById('timer-input-hours').value) || 0;
+    const m = parseInt(document.getElementById('timer-input-minutes').value) || 0;
+    const s = parseInt(document.getElementById('timer-input-seconds').value) || 0;
+    timerDuration = (h * 3600 + m * 60 + s) * 1000;
+    
+    if (timerDuration <= 0) {
+      alert("Please enter a valid duration greater than 0.");
+      return;
+    }
+  }
+  
+  isTimerRunning = true;
+  timerStartTimestamp = Date.now();
+  
+  if (timerMode === 'countdown') {
+    document.getElementById('timer-inputs').classList.add('hidden-animated');
+  }
+  
+  document.getElementById('btn-timer-start').classList.add('hidden');
+  document.getElementById('btn-timer-pause').classList.remove('hidden');
+  
+  // Set accurate polling via setInterval
+  timerInterval = setInterval(() => {
+    tickTimer();
+  }, 100); // 100ms for tight responsiveness
+}
+
+function pauseTimer() {
+  if (!isTimerRunning) return;
+  
+  isTimerRunning = false;
+  clearInterval(timerInterval);
+  
+  // Save current accumulated time to offset
+  const now = Date.now();
+  timerOffset += (now - timerStartTimestamp);
+  timerStartTimestamp = 0;
+  
+  if (timerMode === 'countdown') {
+    document.getElementById('timer-inputs').classList.remove('hidden-animated');
+  }
+  
+  document.getElementById('btn-timer-start').classList.remove('hidden');
+  document.getElementById('btn-timer-pause').classList.add('hidden');
+}
+
+function resetTimer() {
+  pauseTimer();
+  timerOffset = 0;
+  timerStartTimestamp = 0;
+  
+  if (timerMode === 'countdown') {
+    const h = parseInt(document.getElementById('timer-input-hours').value) || 0;
+    const m = parseInt(document.getElementById('timer-input-minutes').value) || 0;
+    const s = parseInt(document.getElementById('timer-input-seconds').value) || 0;
+    timerDuration = (h * 3600 + m * 60 + s) * 1000;
+    updateTimerDisplay(timerDuration);
+  } else {
+    updateTimerDisplay(0);
+  }
+}
+
+function tickTimer() {
+  const now = Date.now();
+  const currentSpan = now - timerStartTimestamp;
+  const totalElapsed = timerOffset + currentSpan;
+  
+  if (timerMode === 'countup') {
+    updateTimerDisplay(totalElapsed);
+  } else {
+    const remaining = timerDuration - totalElapsed;
+    if (remaining <= 0) {
+      updateTimerDisplay(0);
+      onTimerComplete();
+    } else {
+      updateTimerDisplay(remaining);
+    }
+  }
+}
+
+function onTimerComplete() {
+  pauseTimer();
+  timerOffset = 0; 
+  timerStartTimestamp = 0;
+  
+  // Visual Notification
+  const display = document.getElementById('timer-display');
+  // Temporary flashing effect
+  let flashes = 0;
+  const flashInterval = setInterval(() => {
+    display.style.color = flashes % 2 === 0 ? 'var(--danger)' : 'var(--text-main)';
+    flashes++;
+    if (flashes > 5) {
+      clearInterval(flashInterval);
+      display.style.color = 'var(--text-main)';
+    }
+  }, 300);
+  
+  // Play sound if supported and unblocked
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Mozart "Eine kleine Nachtmusik" opening notes (Freq, Duration in seconds)
+    const melody = [
+      [783.99, 0.25], // G5
+      [0, 0.15],      // rest
+      [587.33, 0.25], // D5
+      [0, 0.15],      // rest
+      [783.99, 0.15], // G5
+      [0, 0.05],      // rest
+      [587.33, 0.15], // D5
+      [0, 0.05],      // rest
+      [783.99, 0.15], // G5
+      [0, 0.05],      // rest
+      [987.77, 0.15], // B5
+      [0, 0.05],      // rest
+      [1174.66, 0.4]  // D6 
+    ];
+
+    let startTime = audioCtx.currentTime;
+
+    for (let i = 0; i < melody.length; i++) {
+      const [freq, duration] = melody[i];
+      
+      if (freq > 0) {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'triangle'; 
+        oscillator.frequency.setValueAtTime(freq, startTime); 
+        
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(1.0, startTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration + 0.1);
+      }
+      startTime += duration;
+    }
+  } catch (e) {
+    console.log("Audio notification block, or not supported. " + e);
+  }
+  setTimeout(() => showProfileToast("⏰ Time's up! Great studying."), 10);
+}
+
+function updateTimerDisplay(ms) {
+  let totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 0) totalSeconds = 0;
+  
+  displayTime(totalSeconds);
+}
+
+function displayTime(totalSeconds) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  
+  const formatted = [h, m, s]
+    .map(v => v < 10 ? "0" + v : v)
+    .join(":");
+    
+  document.getElementById('timer-display').textContent = formatted;
 }

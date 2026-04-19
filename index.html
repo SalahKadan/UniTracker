@@ -75,6 +75,14 @@
             </svg>
             GPA Calculator
           </button>
+          <button class="hamburger-item" onclick="loadTimer()">
+            <svg class="h-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Study Timer
+          </button>
         </div>
       </div>
 
@@ -1097,6 +1105,55 @@
 
         <div class="profile-footer-text">UniTracker v1.0 — Built for students, by students.</div>
 
+      </div>
+    </section>
+
+    <!-- ==================== STUDY TIMER ==================== -->
+    <section id="view-timer" class="view hidden">
+      <div class="timer-layout">
+        <!-- Header -->
+        <div class="timer-header">
+          <div>
+            <h2>Study Timer</h2>
+            <p class="timer-subtitle">Stay focused with Count-Up or Countdown modes.</p>
+          </div>
+        </div>
+
+        <div class="timer-container card">
+          <!-- Toggle Modes -->
+          <div class="timer-tabs">
+            <button class="timer-tab active" id="tab-countup" onclick="switchTimerMode('countup')">Count-Up</button>
+            <button class="timer-tab" id="tab-countdown" onclick="switchTimerMode('countdown')">Countdown</button>
+          </div>
+
+          <!-- Display -->
+          <div class="timer-display-wrapper">
+            <div id="timer-display" class="timer-display">00:00:00</div>
+          </div>
+
+          <!-- Countdown Inputs (hidden in count-up mode) -->
+          <div id="timer-inputs" class="timer-inputs hidden-animated">
+            <div class="timer-input-group">
+              <label>Hours</label>
+              <input type="number" id="timer-input-hours" min="0" max="23" value="0" class="gpa-input">
+            </div>
+            <div class="timer-input-group">
+              <label>Minutes</label>
+              <input type="number" id="timer-input-minutes" min="0" max="59" value="25" class="gpa-input">
+            </div>
+            <div class="timer-input-group">
+              <label>Seconds</label>
+              <input type="number" id="timer-input-seconds" min="0" max="59" value="0" class="gpa-input">
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="timer-controls">
+            <button id="btn-timer-start" class="btn-primary timer-btn timer-btn-start" onclick="startTimer()">Start</button>
+            <button id="btn-timer-pause" class="btn-secondary timer-btn timer-btn-pause hidden" onclick="pauseTimer()">Pause</button>
+            <button id="btn-timer-reset" class="btn-outline timer-btn timer-btn-reset" onclick="resetTimer()">Reset</button>
+          </div>
+        </div>
       </div>
     </section>
 
