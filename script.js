@@ -7,8 +7,15 @@ const state = {
   catalogCourseCodes: [],
   isGuest: false,
   draggingItem: null,
-  draggingDuration: 60 // minutes
+  draggingDuration: 60, // minutes
+  currentSemester: 'Spring 2026'
 };
+
+const SEMESTERS = [
+  'Spring 2026', 'Winter 2025–2026', 'Summer 2025', 'Spring 2025',
+  'Winter 2024–2025', 'Summer 2024', 'Spring 2024', 'Winter 2023–2024',
+  'Summer 2023', 'Spring 2023'
+];
 
 // Constants
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
@@ -58,6 +65,148 @@ function loadCatalogState() {
   } catch (e) { /* ignore parse errors */ }
 }
 
+// ==================== SEMESTER PICKER ====================
+const SEMESTER_META = {
+  'Spring':  { icon: '🌸', season: 'spring', color: '#ec4899' },
+  'Winter':  { icon: '❄️', season: 'winter', color: '#3b82f6' },
+  'Summer':  { icon: '☀️', season: 'summer', color: '#f59e0b' }
+};
+
+function getSemesterMeta(semesterValue) {
+  const season = semesterValue.split(' ')[0]; // "Spring", "Winter", "Summer"
+  return SEMESTER_META[season] || SEMESTER_META['Spring'];
+}
+
+function saveSemesterState() {
+  localStorage.setItem('uniSchedule_semester', state.currentSemester);
+}
+
+function loadSemesterState() {
+  const saved = localStorage.getItem('uniSchedule_semester');
+  if (saved && SEMESTERS.includes(saved)) {
+    state.currentSemester = saved;
+  }
+}
+
+function initSemesterPicker() {
+  const picker = document.getElementById('semester-picker');
+  const btn = document.getElementById('semester-picker-btn');
+  const dropdown = document.getElementById('semester-picker-dropdown');
+  const hiddenSelect = document.getElementById('semester-select');
+  if (!picker || !btn || !dropdown) return;
+
+  // Build dropdown options
+  renderSemesterOptions();
+
+  // Sync display to current state
+  updateSemesterDisplay();
+
+  // Toggle dropdown
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = picker.classList.contains('open');
+    if (isOpen) {
+      closeSemesterPicker();
+    } else {
+      picker.classList.add('open');
+      dropdown.classList.remove('hidden');
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!picker.contains(e.target)) {
+      closeSemesterPicker();
+    }
+  });
+}
+
+function closeSemesterPicker() {
+  const picker = document.getElementById('semester-picker');
+  const dropdown = document.getElementById('semester-picker-dropdown');
+  if (picker) picker.classList.remove('open');
+  if (dropdown) dropdown.classList.add('hidden');
+}
+
+function renderSemesterOptions() {
+  const dropdown = document.getElementById('semester-picker-dropdown');
+  if (!dropdown) return;
+
+  // Group semesters by academic year for visual separation
+  let lastYear = '';
+  let html = '';
+
+  SEMESTERS.forEach(sem => {
+    const meta = getSemesterMeta(sem);
+    const isActive = sem === state.currentSemester;
+    // Extract year portion for grouping
+    const yearPart = sem.replace(/^(Spring|Winter|Summer)\s+/, '');
+    if (yearPart !== lastYear) {
+      html += `<div class="semester-year-sep">${yearPart}</div>`;
+      lastYear = yearPart;
+    }
+
+    html += `
+      <div class="semester-option${isActive ? ' active' : ''}" data-semester="${sem}">
+        <div class="semester-option-icon ${meta.season}">${meta.icon}</div>
+        <span class="semester-option-text">${sem}</span>
+        <div class="semester-option-check"></div>
+      </div>
+    `;
+  });
+
+  dropdown.innerHTML = html;
+
+  // Attach click handlers
+  dropdown.querySelectorAll('.semester-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const chosen = opt.dataset.semester;
+      state.currentSemester = chosen;
+      saveSemesterState();
+
+      // Sync hidden <select>
+      const hiddenSelect = document.getElementById('semester-select');
+      if (hiddenSelect) hiddenSelect.value = chosen;
+
+      // Update UI
+      updateSemesterDisplay();
+      renderSemesterOptions(); // refresh active state
+      closeSemesterPicker();
+
+      // Reset previews and re-render
+      state.previewCourseCodes = [];
+      renderStudentDashboard();
+    });
+  });
+}
+
+function updateSemesterDisplay() {
+  const meta = getSemesterMeta(state.currentSemester);
+  const iconEl = document.getElementById('semester-picker-icon');
+  const valueEl = document.getElementById('semester-picker-value');
+  if (iconEl) {
+    iconEl.textContent = meta.icon;
+    iconEl.style.background = `${meta.color}15`;
+  }
+  if (valueEl) valueEl.textContent = state.currentSemester;
+
+  // Sync hidden select
+  const hiddenSelect = document.getElementById('semester-select');
+  if (hiddenSelect) hiddenSelect.value = state.currentSemester;
+
+  // Sync timetable badge
+  const badgeIcon = document.getElementById('timetable-semester-icon');
+  const badgeText = document.getElementById('timetable-semester-text');
+  const badge = document.getElementById('timetable-semester-badge');
+  if (badgeIcon) badgeIcon.textContent = meta.icon;
+  if (badgeText) badgeText.textContent = state.currentSemester;
+  if (badge) {
+    badge.style.background = `${meta.color}12`;
+    badge.style.borderColor = `${meta.color}25`;
+    badge.style.color = meta.color;
+  }
+}
+
 // ==================== INIT ====================
 function init() {
   // Try to restore a registered user session
@@ -96,6 +245,7 @@ function init() {
   if (restored) {
     if (hash === 'student') {
       loadCatalogState();
+      loadSemesterState();
       loadDashboard();
     } else if (hash === 'todo') {
       loadCatalogState();
@@ -353,6 +503,7 @@ function setupEventListeners() {
     const container = document.getElementById('req-meetings-container');
     if (!container.children.length) resetMeetingRows();
     document.getElementById('create-course-error').classList.add('hidden');
+    document.getElementById('req-semester').value = state.currentSemester;
     document.getElementById('modal-request').classList.remove('hidden');
   });
   document.getElementById('btn-add-meeting-row').addEventListener('click', () => {
@@ -416,7 +567,7 @@ function setupEventListeners() {
 
   document.getElementById('btn-remove-course-schedule').addEventListener('click', (e) => {
     const code = e.currentTarget.dataset.code || e.currentTarget.getAttribute('data-code');
-    const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+    const sections = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === code);
     sections.forEach(s => window.api.removeFromSchedule(state.currentUser.id, s.id));
     document.getElementById('modal-course-info').classList.add('hidden');
     renderStudentDashboard();
@@ -545,30 +696,65 @@ function handleSearchAutocomplete(query) {
     dropdown.classList.add('hidden');
     return;
   }
-  const courses = window.api.getPublicCourses(state.currentUniId);
+  const courses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const grouped = {};
   courses.forEach(c => {
     if (!grouped[c.code]) grouped[c.code] = c;
   });
 
-  const matches = Object.values(grouped).filter(c =>
-    c.name.toLowerCase().includes(query) ||
-    c.code.toLowerCase().includes(query)
-  );
+  const matches = Object.values(grouped).filter(c => {
+    const isSelected = state.catalogCourseCodes && state.catalogCourseCodes.includes(c.code);
+    if (isSelected) return false;
+    
+    return c.name.toLowerCase().includes(query) ||
+           c.code.toLowerCase().includes(query);
+  });
 
   if (matches.length === 0) {
-    dropdown.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; padding:0.5rem;">No courses found.</div>';
+    dropdown.innerHTML = `
+      <div style="padding:1.5rem 1rem; text-align:center; color:var(--text-muted); display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+        <span style="font-size:2rem; margin-bottom:0.25rem;">🔍</span>
+        <span style="font-size:0.95rem; font-weight:600; color:var(--text-main);">No courses found</span>
+        <span style="font-size:0.8rem; opacity:0.8; margin-bottom:0.75rem;">Can't find what you're looking for?</span>
+        <button onclick="document.getElementById('course-search').value=''; document.getElementById('search-results-dropdown').classList.add('hidden'); document.getElementById('req-semester').value = state.currentSemester; document.getElementById('modal-request').classList.remove('hidden');" class="btn-primary" style="font-size:0.8rem; padding:0.5rem 1rem; border-radius:6px; display:flex; align-items:center; gap:0.5rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Create Course
+        </button>
+      </div>`;
   } else {
     dropdown.innerHTML = matches.map(c => `
-      <div class="search-result-item" data-code="${c.code}" style="padding:0.5rem; cursor:pointer; border-radius:4px; transition:background 0.2s;">
-        <div style="font-weight:600; font-size:0.9rem; color:var(--text-light);">${c.name}</div>
-        <div style="font-size:0.75rem; color:var(--text-muted);">${c.code}${c.faculty ? ' · ' + c.faculty : ''}</div>
+      <div class="search-result-item" data-code="${c.code}" style="padding:0.75rem 1rem; cursor:pointer; border-radius:8px; transition:all 0.2s ease; border:1px solid transparent; display:flex; align-items:center; gap:1rem;">
+        <div style="flex-shrink:0; width:40px; height:40px; border-radius:8px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:bold; font-size:0.8rem;">
+          ${c.code.substring(0, 2)}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:0.95rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.15rem;">${c.name}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:0.5rem;">
+            <span style="background:rgba(255,255,255,0.1); padding:0.1rem 0.4rem; border-radius:4px;">${c.code}</span>
+            ${c.faculty ? `<span style="opacity:0.7;">· ${c.faculty}</span>` : ''}
+          </div>
+        </div>
+        <div style="flex-shrink:0; color:var(--text-muted); opacity:0; transition:opacity 0.2s;" class="add-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
       </div>
     `).join('');
 
     dropdown.querySelectorAll('.search-result-item').forEach(el => {
-      el.addEventListener('mouseover', () => el.style.background = 'var(--surface-2)');
-      el.addEventListener('mouseout', () => el.style.background = 'transparent');
+      el.addEventListener('mouseover', () => {
+        el.style.background = 'var(--surface-2)';
+        el.style.borderColor = 'var(--border)';
+        el.style.transform = 'translateY(-1px)';
+        el.querySelector('.add-icon').style.opacity = '1';
+        el.querySelector('.add-icon').style.color = 'var(--primary)';
+      });
+      el.addEventListener('mouseout', () => {
+        el.style.background = 'transparent';
+        el.style.borderColor = 'transparent';
+        el.style.transform = 'none';
+        el.querySelector('.add-icon').style.opacity = '0';
+        el.querySelector('.add-icon').style.color = 'var(--text-muted)';
+      });
       el.addEventListener('click', (ev) => {
         const code = ev.currentTarget.dataset.code || ev.currentTarget.getAttribute('data-code');
         if (!state.previewCourseCodes) state.previewCourseCodes = [];
@@ -588,6 +774,7 @@ function handleSearchAutocomplete(query) {
 // ==================== DASHBOARD ====================
 function loadDashboard() {
   showView('student');
+  initSemesterPicker();
   renderStudentDashboard();
 }
 
@@ -599,7 +786,7 @@ function renderStudentDashboard() {
 // ==================== PUBLIC COURSES (grouped by code) ====================
 function renderPublicCourses() {
   const container = document.getElementById('public-courses-list');
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const schedule = window.api.getPersonalSchedule(state.currentUser.id);
 
   // Filter only added courses
@@ -634,8 +821,13 @@ function renderPublicCourses() {
 
   let html = '';
   Object.values(grouped).forEach(group => {
+    const courseColor = getCourseColorStr(group.code);
     html += `
-      <div class="course-card" style="position:relative;">
+      <div class="course-card" data-code="${group.code}" style="position:relative; --card-color: ${courseColor};">
+        <style>
+          .course-card[data-code="${group.code}"]::before { background: var(--card-color) !important; }
+          .course-card[data-code="${group.code}"]:hover { border-color: var(--card-color) !important; box-shadow: 0 10px 25px rgba(0,0,0,0.4), 0 0 15px var(--card-color) !important; }
+        </style>
         <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:0.25rem; z-index:2;">
           <div style="display:flex; gap:0.25rem;">
             ${state.previewCourseCodes && state.previewCourseCodes.includes(group.code) ? `<button class="btn-confirm-icon" title="Confirm Selection" data-code="${group.code}" style="background:transparent; border:none; color:#10b981; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; transition:all 0.2s;">✔</button>` : ''}
@@ -645,7 +837,7 @@ function renderPublicCourses() {
         </div>
         <h4 class="course-title-btn" data-code="${group.code}" title="Click to Unpick Course From Catalog" style="padding-right:60px; position:relative; z-index:1; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-main)'">${group.name}</h4>
         <div class="course-meta" style="position:relative; z-index:1; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem; font-weight:500;">
-          ${group.code}  ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
+          <span style="background: ${courseColor}22; color: ${courseColor}; padding: 0.1rem 0.4rem; border-radius: 4px;">${group.code}</span> ·  ${group.credits ? group.credits + ' Credits' : 'Credits N/A'}
         </div>
       </div>
     `;
@@ -678,7 +870,7 @@ function renderPublicCourses() {
       if (!state.catalogCourseCodes.includes(code)) state.catalogCourseCodes.push(code);
       saveCatalogState();
 
-      const allCourses = window.api.getPublicCourses(state.currentUniId);
+      const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
       const sections = allCourses.filter(c => c.code === code);
       sections.forEach(s => {
         window.api.removeFromSchedule(state.currentUser.id, s.id);
@@ -704,7 +896,7 @@ function renderPublicCourses() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const code = e.currentTarget.dataset.code;
-      const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+      const sections = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === code);
       sections.forEach(s => window.api.removeFromSchedule(state.currentUser.id, s.id));
       if (state.previewCourseCodes) {
         state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
@@ -719,7 +911,7 @@ function renderPublicCourses() {
 }
 
 function openCourseInfo(code) {
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const sections = allCourses.filter(c => c.code === code);
   if (sections.length === 0) return;
 
@@ -767,7 +959,7 @@ function openCourseInfo(code) {
 
 function renderCourseSessions(code) {
   const container = document.getElementById('info-sessions-container');
-  const sections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+  const sections = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === code);
 
   let html = '';
   sections.forEach(s => {
@@ -922,7 +1114,7 @@ function renderCourseSessions(code) {
       window.api.deleteCourseSession(id);
 
       // If the last session is deleted, close the modal and refresh
-      const remainingSections = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === code);
+      const remainingSections = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === code);
       if (remainingSections.length === 0) {
         document.getElementById('modal-course-info').classList.add('hidden');
         if (state.previewCourseCodes) state.previewCourseCodes = state.previewCourseCodes.filter(c => c !== code);
@@ -941,9 +1133,9 @@ function renderCourseSessions(code) {
 function renderTimetable() {
   const container = document.getElementById('student-timetable');
   const scheduleIds = window.api.getPersonalSchedule(state.currentUser.id);
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   let myCourses = allCourses.filter(c => scheduleIds.includes(c.id));
-  const myCustoms = window.api.getCustomEvents(state.currentUser.id);
+  const myCustoms = window.api.getCustomEvents(state.currentUser.id, state.currentSemester);
 
   let previewCourses = [];
   if (state.previewCourseCodes && state.previewCourseCodes.length > 0) {
@@ -1156,7 +1348,7 @@ function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols =
   const baseColor = isCustom ? (item.color || '#10b981') : getCourseColorStr(item.code);
   let bgColor = pref.color || baseColor;
   if (!isCustom && !pref.color) {
-    const peers = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === item.code);
+    const peers = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === item.code);
     for (const p of peers) {
       const pPref = window.api.getEventPreference(state.currentUser.id, p.id);
       if (pPref && pPref.color) {
@@ -1279,9 +1471,9 @@ window.handlePreviewSelect = (id) => {
 function handleDragStartGlobal(e, id, isCustom) {
   let item;
   if (isCustom) {
-    item = window.api.getCustomEvents(state.currentUser.id).find(x => x.id === id);
+    item = window.api.getCustomEvents(state.currentUser.id, state.currentSemester).find(x => x.id === id);
   } else {
-    item = window.api.getPublicCourses(state.currentUniId).find(x => x.id === id);
+    item = window.api.getPublicCourses(state.currentUniId, state.currentSemester).find(x => x.id === id);
   }
 
   if (item) {
@@ -1325,11 +1517,11 @@ function handleDropGlobal(e, cell) {
   let oldStart, oldEnd;
 
   if (payload.isCustom) {
-    const ev = window.api.getCustomEvents(state.currentUser.id).find(x => x.id === payload.id);
+    const ev = window.api.getCustomEvents(state.currentUser.id, state.currentSemester).find(x => x.id === payload.id);
     if (!ev) return;
     oldStart = ev.start; oldEnd = ev.end;
   } else {
-    const ev = window.api.getPublicCourses(state.currentUniId).find(x => x.id === payload.id);
+    const ev = window.api.getPublicCourses(state.currentUniId, state.currentSemester).find(x => x.id === payload.id);
     if (!ev) return;
     const pref = window.api.getEventPreference(state.currentUser.id, payload.id);
     oldStart = pref.start || ev.start; oldEnd = pref.end || ev.end;
@@ -1367,7 +1559,7 @@ function openEditModalGlobal(id, isCustom) {
   const formGrid = document.getElementById('edit-form-grid');
 
   if (isCustom) {
-    const ev = window.api.getCustomEvents(state.currentUser.id).find(x => x.id === id);
+    const ev = window.api.getCustomEvents(state.currentUser.id, state.currentSemester).find(x => x.id === id);
     if (!ev) return;
     document.getElementById('edit-title').innerText = ev.title;
     document.getElementById('edit-color').value = ev.color || '#10b981';
@@ -1377,7 +1569,7 @@ function openEditModalGlobal(id, isCustom) {
     document.getElementById('edit-room').value = ev.room || '';
     document.getElementById('edit-notes').value = ev.notes || '';
   } else {
-    const ev = window.api.getPublicCourses(state.currentUniId).find(c => c.id === id);
+    const ev = window.api.getPublicCourses(state.currentUniId, state.currentSemester).find(c => c.id === id);
     if (!ev) return;
     document.getElementById('edit-title').innerText = 'Editing: ' + ev.name;
     const pref = window.api.getEventPreference(state.currentUser.id, id);
@@ -1407,9 +1599,9 @@ function handleSaveEdit() {
     window.api.saveEventPreference(state.currentUser.id, id, { color, day, start, end, room, notes });
 
     // Syndicate color to ALL sections of the same course
-    const ev = window.api.getPublicCourses(state.currentUniId).find(c => c.id === id);
+    const ev = window.api.getPublicCourses(state.currentUniId, state.currentSemester).find(c => c.id === id);
     if (ev && ev.code) {
-      const peers = window.api.getPublicCourses(state.currentUniId).filter(c => c.code === ev.code && c.id !== id);
+      const peers = window.api.getPublicCourses(state.currentUniId, state.currentSemester).filter(c => c.code === ev.code && c.id !== id);
       peers.forEach(peer => {
         const peerPref = window.api.getEventPreference(state.currentUser.id, peer.id) || {};
         window.api.saveEventPreference(state.currentUser.id, peer.id, { ...peerPref, color });
@@ -1437,7 +1629,7 @@ function submitCustomEvent() {
   const end = document.getElementById('cust-end').value;
   const notes = document.getElementById('cust-notes').value;
   if (!title || !start || !end) { alert('Please fill in title, start time, and end time.'); return; }
-  window.api.addCustomEvent(state.currentUser.id, { title, day, start, end, notes });
+  window.api.addCustomEvent(state.currentUser.id, { title, day, start, end, notes, semester: state.currentSemester });
   document.getElementById('form-custom-event').reset();
   document.getElementById('modal-custom').classList.add('hidden');
   renderTimetable();
@@ -1516,10 +1708,12 @@ function resetMeetingRows() {
 }
 
 function submitCourseRequest() {
+  const reqSemester = document.getElementById('req-semester').value || state.currentSemester;
   const commonData = {
     uniId: state.currentUniId,
     name: document.getElementById('req-name').value,
     code: document.getElementById('req-code').value,
+    semester: reqSemester,
     faculty: document.getElementById('req-faculty').value,
     credits: document.getElementById('req-credits').value || '0',
     notes: document.getElementById('req-notes').value
@@ -1535,7 +1729,7 @@ function submitCourseRequest() {
     modalContent.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const existingCourses = window.api.getPublicCourses(state.currentUniId);
+  const existingCourses = window.api.getPublicCourses(state.currentUniId, reqSemester);
   const codeExists = existingCourses.some(c => c.code.toLowerCase() === commonData.code.trim().toLowerCase());
   if (codeExists) {
     triggerError(`A course with the code "${commonData.code}" already exists in the catalog.`);
@@ -1590,7 +1784,7 @@ function submitCourseRequest() {
 // ==================== EXAM SCHEDULE ====================
 window.openExamSchedule = function () {
   const container = document.getElementById('exam-schedule-list');
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
 
   // Use catalogCourseCodes — any course in the "My Courses" sidebar shows its exams
   const myCodes = (state.catalogCourseCodes || []).slice();
@@ -1857,7 +2051,7 @@ function renderSemesterProgress() {
 
 function renderCatalogForProgress() {
   const container = document.getElementById('sp-catalog-list');
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const tracked = getTrackedCourses();
   const trackedCodes = tracked.filter(t => t.type === 'public').map(t => t.code);
 
@@ -1963,7 +2157,7 @@ function renderProgressCards() {
 }
 
 function renderPublicProgressCard(code, idx) {
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const sample = allCourses.find(c => c.code === code);
   if (!sample) return '';
 
@@ -2324,7 +2518,7 @@ function saveGpaSelectedIds(ids) {
 }
 
 function getGpaCoursesList() {
-  const allCourses = window.api.getPublicCourses(state.currentUniId);
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
   const customProgressCourses = window.api.getCustomProgressCourses(state.currentUser.id) || [];
   const selectedIds = getGpaSelectedIds();
 
@@ -2440,25 +2634,44 @@ function attachGpaListeners(courses) {
       const q = e.target.value.toLowerCase().trim();
       if (!q) { resultsDiv.classList.add('hidden'); return; }
 
-      const allPublic = window.api.getPublicCourses(state.currentUniId);
-      const matches = allPublic.filter(c =>
-        c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
-      ).slice(0, 10);
+      const allPublic = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
+      const currentSel = getGpaSelectedIds();
+      
+      const grouped = {};
+      allPublic.forEach(c => {
+        if (!grouped[c.code]) grouped[c.code] = c;
+      });
+
+      const matches = Object.values(grouped).filter(c => {
+        if (currentSel.includes(c.code)) return false;
+        return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+      }).slice(0, 10);
 
       if (matches.length === 0) {
-        resultsDiv.innerHTML = '<div style="padding:1rem; color:var(--text-muted); text-align:center;">No courses found</div>';
+        resultsDiv.innerHTML = `
+          <div style="padding:1rem; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.5rem;">🔍</span>
+            <span style="font-size:0.9rem; font-weight:500;">No courses found</span>
+            <span style="font-size:0.75rem; opacity:0.7;">Or already added</span>
+          </div>`;
       } else {
         let html = '';
-        const currentSel = getGpaSelectedIds();
         matches.forEach(m => {
-          const isAdded = currentSel.includes(m.code);
           html += `
-            <div class="gpa-result-item" onclick="addCourseToGpa('${m.code}')">
-              <div class="gpa-result-info">
-                <div class="gpa-result-name">${m.name}</div>
-                <div class="gpa-result-meta">${m.code} • ${m.credits} Credits</div>
+            <div class="gpa-result-item" onclick="addCourseToGpa('${m.code}')" style="display:flex; align-items:center; gap:1rem; padding:0.75rem; transition:all 0.2s;">
+              <div style="flex-shrink:0; width:36px; height:36px; border-radius:6px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:bold; font-size:0.75rem;">
+                ${m.code.substring(0, 2)}
               </div>
-              <div class="gpa-result-add">${isAdded ? '✓' : '+'}</div>
+              <div class="gpa-result-info" style="flex:1; min-width:0;">
+                <div class="gpa-result-name" style="font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</div>
+                <div class="gpa-result-meta" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.1rem;">
+                  <span style="background:rgba(255,255,255,0.05); padding:0.1rem 0.3rem; border-radius:4px;">${m.code}</span>
+                  • ${m.credits} Credits
+                </div>
+              </div>
+              <div class="gpa-result-add" style="color:var(--text-muted); font-size:1.2rem; display:flex; align-items:center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </div>
             </div>
           `;
         });

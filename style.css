@@ -1551,6 +1551,211 @@ nav:not(.navbar-landing) {
   font-size: 1rem;
 }
 
+/* ==================== SEMESTER PICKER ==================== */
+.semester-picker {
+  flex-shrink: 0;
+  position: relative;
+  margin-bottom: 0.75rem;
+  z-index: 50;
+}
+
+.semester-picker-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  background: linear-gradient(135deg, rgba(26, 37, 64, 0.9), rgba(19, 27, 46, 0.95));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.semester-picker-btn:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(30, 43, 72, 0.95), rgba(22, 32, 55, 0.98));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.08);
+}
+
+.semester-picker.open .semester-picker-btn {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.semester-picker-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  background: rgba(59, 130, 246, 0.1);
+  transition: background 0.25s, transform 0.25s;
+}
+
+.semester-picker-btn:hover .semester-picker-icon {
+  transform: scale(1.08);
+}
+
+.semester-picker-label {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.semester-picker-sublabel {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 0.15rem;
+}
+
+.semester-picker-value {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.semester-picker-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s;
+}
+
+.semester-picker.open .semester-picker-chevron {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+/* Dropdown */
+.semester-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: rgba(19, 27, 46, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 0.4rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  max-height: 320px;
+  overflow-y: auto;
+  animation: semDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin;
+}
+
+.semester-picker-dropdown.hidden {
+  display: none;
+}
+
+@keyframes semDropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.semester-picker-dropdown::-webkit-scrollbar { width: 4px; }
+.semester-picker-dropdown::-webkit-scrollbar-track { background: transparent; }
+.semester-picker-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.semester-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.semester-option:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.12);
+}
+
+.semester-option.active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.semester-option-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.semester-option-icon.spring { background: rgba(236, 72, 153, 0.12); }
+.semester-option-icon.winter { background: rgba(59, 130, 246, 0.12); }
+.semester-option-icon.summer { background: rgba(245, 158, 11, 0.12); }
+
+.semester-option-text {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.semester-option.active .semester-option-text {
+  color: var(--primary-hover);
+}
+
+.semester-option-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.semester-option.active .semester-option-check {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.semester-option.active .semester-option-check::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+}
+
+/* Year separator inside dropdown */
+.semester-year-sep {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: 0.5rem 0.6rem 0.2rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
 .search-box {
   flex-shrink: 0;
 }
@@ -2242,17 +2447,116 @@ nav:not(.navbar-landing) {
 
   .sidebar {
     padding: 0.75rem;
-    max-height: 350px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .sidebar h3 {
     font-size: 0.9rem;
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0.4rem;
+  }
+
+  /* Semester picker mobile */
+  .semester-picker {
+    margin-bottom: 0.5rem;
+  }
+
+  .semester-picker-btn {
+    padding: 0.45rem 0.6rem;
+    gap: 0.5rem;
+    border-radius: 8px;
+  }
+
+  .semester-picker-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+  }
+
+  .semester-picker-value {
+    font-size: 0.82rem;
+  }
+
+  .semester-picker-sublabel {
+    font-size: 0.58rem;
+  }
+
+  .semester-picker-dropdown {
+    max-height: 260px;
+    border-radius: 10px;
+    padding: 0.3rem;
+  }
+
+  .semester-option {
+    padding: 0.4rem 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .semester-option-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+  }
+
+  .semester-option-text {
+    font-size: 0.8rem;
+  }
+
+  .semester-option-check {
+    width: 16px;
+    height: 16px;
+  }
+
+  .semester-year-sep {
+    font-size: 0.6rem;
+    padding: 0.35rem 0.5rem 0.15rem;
+  }
+
+  #timetable-semester-badge {
+    display: none !important;
+  }
+
+  /* Search box */
+  .search-box {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Course cards mobile */
+  .course-card {
+    padding: 0.85rem 0.85rem 0.85rem 1rem;
+    border-radius: 10px;
+  }
+
+  .course-card h4 {
+    font-size: 0.82rem;
+    padding-right: 50px !important;
+  }
+
+  .course-card .course-meta {
+    font-size: 0.72rem !important;
+  }
+
+  .courses-list {
+    gap: 0.5rem;
+    max-height: 200px;
+  }
+
+  /* Bottom action buttons */
+  #btn-open-custom-modal,
+  #btn-open-request-modal {
+    font-size: 0.72rem !important;
+    padding: 0.5rem 0.3rem !important;
+    white-space: nowrap;
   }
 
   .main-content {
     padding: 0.5rem;
     min-height: 400px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .timetable-header h2 {
@@ -2261,9 +2565,10 @@ nav:not(.navbar-landing) {
 
   /* ===== Timetable ===== */
   .timetable-grid {
-    grid-template-columns: 40px repeat(5, minmax(60px, 1fr));
-    grid-template-rows: 36px repeat(13, 45px);
+    grid-template-columns: 38px repeat(5, minmax(58px, 1fr));
+    grid-template-rows: 34px repeat(13, 44px);
     font-size: 0.7rem;
+    min-width: 340px;
   }
 
   .tt-header {
@@ -2277,8 +2582,8 @@ nav:not(.navbar-landing) {
   }
 
   .course-block {
-    padding: 0.2rem;
-    border-radius: 3px;
+    padding: 0.2rem 0.25rem;
+    border-radius: 4px;
   }
 
   .course-block h5 {
@@ -2480,14 +2785,23 @@ nav:not(.navbar-landing) {
   .modal-content {
     max-width: 95vw;
     margin: 0 0.5rem;
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.85rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.15rem;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 0.6rem;
   }
   .form-grid .form-group, .form-grid [style*="grid-column"] {
     grid-column: 1 / -1 !important;
+  }
+
+  .meeting-row {
+    padding: 0.75rem !important;
   }
 
   /* ===== Auth ===== */
@@ -2524,15 +2838,8 @@ nav:not(.navbar-landing) {
   }
 
   @keyframes mobile-float {
-
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-3px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
   }
 }
 
@@ -2568,22 +2875,63 @@ nav:not(.navbar-landing) {
     display: none;
   }
 
+  /* Dashboard extra small */
+  .sidebar {
+    padding: 0.6rem;
+  }
+
+  .sidebar h3 {
+    font-size: 0.82rem;
+  }
+
+  .semester-picker-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
+
+  .semester-picker-value {
+    font-size: 0.78rem;
+  }
+
+  .course-card {
+    padding: 0.7rem 0.7rem 0.7rem 0.9rem;
+  }
+
+  .course-card h4 {
+    font-size: 0.78rem;
+    padding-right: 40px !important;
+  }
+
+  .courses-list {
+    max-height: 170px;
+    gap: 0.4rem;
+  }
+
+  /* Stack bottom buttons vertically */
+  #btn-open-custom-modal,
+  #btn-open-request-modal {
+    font-size: 0.68rem !important;
+    padding: 0.45rem 0.25rem !important;
+  }
+
   /* Timetable extra small */
   .timetable-grid {
-    grid-template-columns: 35px repeat(5, minmax(50px, 1fr));
-    grid-template-rows: 30px repeat(13, 40px);
+    grid-template-columns: 32px repeat(5, minmax(48px, 1fr));
+    grid-template-rows: 28px repeat(13, 38px);
+    min-width: 300px;
   }
 
   .tt-header {
-    font-size: 0.5rem;
+    font-size: 0.48rem;
   }
 
   .tt-time {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
   }
 
   .course-block h5 {
-    font-size: 0.5rem;
+    font-size: 0.48rem;
   }
 
   .course-block span {
@@ -2608,6 +2956,16 @@ nav:not(.navbar-landing) {
   /* GPA table scrollable */
   .gpa-table-wrapper {
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal extra small */
+  .modal-content {
+    padding: 1rem 0.65rem;
+    border-radius: 10px;
+  }
+
+  .modal-content h2 {
+    font-size: 1.05rem;
   }
 }
 
@@ -3557,6 +3915,18 @@ nav:not(.navbar-landing) {
 
 .gpa-result-item:hover {
   background: rgba(59, 130, 246, 0.15);
+}
+
+.gpa-result-item .gpa-result-add {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.2s ease;
+}
+
+.gpa-result-item:hover .gpa-result-add {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--primary) !important;
 }
 
 .gpa-result-info {

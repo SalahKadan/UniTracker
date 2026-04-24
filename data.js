@@ -20,9 +20,9 @@ class DataStore {
       return JSON.parse(data);
     }
     const initialDB = {
-      users: [], 
-      courses: [], 
-      schedules: {} 
+      users: [],
+      courses: [],
+      schedules: {}
     };
     return initialDB;
   }
@@ -39,22 +39,30 @@ class DataStore {
     if (this.db._seeded) return;
     const seeds = [
       // HUJI courses with multiple sections
-      { uniId:'huji', name:'Intro to CS', code:'CS101', faculty:'Computer Science', type:'lecture', lecturer:'Prof. Cohen', room:'Rothberg 01', day:'Sunday', start:'08:00', end:'10:00', group:'1', credits:'4' },
-      { uniId:'huji', name:'Intro to CS', code:'CS101', faculty:'Computer Science', type:'lecture', lecturer:'Prof. Levi', room:'Rothberg 02', day:'Tuesday', start:'10:00', end:'12:00', group:'2', credits:'4' },
-      { uniId:'huji', name:'Intro to CS', code:'CS101', faculty:'Computer Science', type:'lecture', lecturer:'Prof. Cohen', room:'Rothberg 01', day:'Thursday', start:'14:00', end:'16:00', group:'3', credits:'4' },
-      { uniId:'huji', name:'Linear Algebra', code:'MATH201', faculty:'Mathematics', type:'lecture', lecturer:'Dr. Ben-David', room:'Manchester 101', day:'Monday', start:'10:00', end:'12:00', group:'1', credits:'5' },
-      { uniId:'huji', name:'Linear Algebra', code:'MATH201', faculty:'Mathematics', type:'lecture', lecturer:'Dr. Shapira', room:'Manchester 202', day:'Wednesday', start:'08:00', end:'10:00', group:'2', credits:'5' },
-      { uniId:'huji', name:'Data Structures', code:'CS201', faculty:'Computer Science', type:'lecture', lecturer:'Prof. Amir', room:'Rothberg 03', day:'Sunday', start:'12:00', end:'14:00', group:'1', credits:'4' },
-      { uniId:'huji', name:'Data Structures', code:'CS201', faculty:'Computer Science', type:'tutorial', lecturer:'TA Noa', room:'Rothberg Lab', day:'Monday', start:'14:00', end:'16:00', group:'1', credits:'4' },
-      { uniId:'huji', name:'Data Structures', code:'CS201', faculty:'Computer Science', type:'tutorial', lecturer:'TA Yossi', room:'Rothberg Lab', day:'Wednesday', start:'12:00', end:'14:00', group:'2', credits:'4' },
+      { uniId: 'huji', name: 'Intro to CS', code: 'CS101', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Cohen', room: 'Rothberg 01', day: 'Sunday', start: '08:00', end: '10:00', group: '1', credits: '4' },
+      { uniId: 'huji', name: 'Intro to CS', code: 'CS101', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Levi', room: 'Rothberg 02', day: 'Tuesday', start: '10:00', end: '12:00', group: '2', credits: '4' },
+      { uniId: 'huji', name: 'Intro to CS', code: 'CS101', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Cohen', room: 'Rothberg 01', day: 'Thursday', start: '14:00', end: '16:00', group: '3', credits: '4' },
+      { uniId: 'huji', name: 'Linear Algebra', code: 'MATH201', semester: 'Spring 2026', faculty: 'Mathematics', type: 'lecture', lecturer: 'Dr. Ben-David', room: 'Manchester 101', day: 'Monday', start: '10:00', end: '12:00', group: '1', credits: '5' },
+      { uniId: 'huji', name: 'Linear Algebra', code: 'MATH201', semester: 'Spring 2026', faculty: 'Mathematics', type: 'lecture', lecturer: 'Dr. Shapira', room: 'Manchester 202', day: 'Wednesday', start: '08:00', end: '10:00', group: '2', credits: '5' },
+      { uniId: 'huji', name: 'Data Structures', code: 'CS201', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Amir', room: 'Rothberg 03', day: 'Sunday', start: '12:00', end: '14:00', group: '1', credits: '4' },
+      { uniId: 'huji', name: 'Data Structures', code: 'CS201', semester: 'Spring 2026', faculty: 'Computer Science', type: 'tutorial', lecturer: 'TA Noa', room: 'Rothberg Lab', day: 'Monday', start: '14:00', end: '16:00', group: '1', credits: '4' },
+      { uniId: 'huji', name: 'Data Structures', code: 'CS201', semester: 'Spring 2026', faculty: 'Computer Science', type: 'tutorial', lecturer: 'TA Yossi', room: 'Rothberg Lab', day: 'Wednesday', start: '12:00', end: '14:00', group: '2', credits: '4' },
       // TAU courses
-      { uniId:'tau', name:'Physics I', code:'PHYS101', faculty:'Physics', type:'lecture', lecturer:'Prof. Katz', room:'Shenkar 201', day:'Sunday', start:'09:00', end:'11:00', group:'1', credits:'5' },
-      { uniId:'tau', name:'Physics I', code:'PHYS101', faculty:'Physics', type:'lecture', lecturer:'Prof. Rosen', room:'Shenkar 202', day:'Tuesday', start:'11:00', end:'13:00', group:'2', credits:'5' },
-      { uniId:'tau', name:'Calculus I', code:'MATH101', faculty:'Mathematics', type:'lecture', lecturer:'Dr. Stern', room:'Dan David 101', day:'Monday', start:'08:00', end:'10:00', group:'1', credits:'5' },
-      { uniId:'tau', name:'Calculus I', code:'MATH101', faculty:'Mathematics', type:'lecture', lecturer:'Dr. Weiss', room:'Dan David 102', day:'Thursday', start:'10:00', end:'12:00', group:'2', credits:'5' },
+      { uniId: 'tau', name: 'Physics I', code: 'PHYS101', semester: 'Spring 2026', faculty: 'Physics', type: 'lecture', lecturer: 'Prof. Katz', room: 'Shenkar 201', day: 'Sunday', start: '09:00', end: '11:00', group: '1', credits: '5' },
+      { uniId: 'tau', name: 'Physics I', code: 'PHYS101', semester: 'Spring 2026', faculty: 'Physics', type: 'lecture', lecturer: 'Prof. Rosen', room: 'Shenkar 202', day: 'Tuesday', start: '11:00', end: '13:00', group: '2', credits: '5' },
+      { uniId: 'tau', name: 'Calculus I', code: 'MATH101', semester: 'Spring 2026', faculty: 'Mathematics', type: 'lecture', lecturer: 'Dr. Stern', room: 'Dan David 101', day: 'Monday', start: '08:00', end: '10:00', group: '1', credits: '5' },
+      { uniId: 'tau', name: 'Calculus I', code: 'MATH101', semester: 'Spring 2026', faculty: 'Mathematics', type: 'lecture', lecturer: 'Dr. Weiss', room: 'Dan David 102', day: 'Thursday', start: '10:00', end: '12:00', group: '2', credits: '5' },
+      // Technion courses
+      { uniId: 'technion', name: 'Introduction to Computer Science', code: '234114', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Keren', room: 'Taub 1', day: 'Sunday', start: '10:30', end: '12:30', group: '1', credits: '4' },
+      { uniId: 'technion', name: 'Introduction to Computer Science', code: '234114', semester: 'Spring 2026', faculty: 'Computer Science', type: 'tutorial', lecturer: 'TA Moshe', room: 'Taub 2', day: 'Tuesday', start: '14:30', end: '16:30', group: '1', credits: '4' },
+      { uniId: 'technion', name: 'Introduction to Systems Programming', code: '234124', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Itai', room: 'Taub 3', day: 'Monday', start: '10:30', end: '12:30', group: '1', credits: '4' },
+      { uniId: 'technion', name: 'Data Structures 1', code: '234218', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Keren', room: 'Taub 1', day: 'Wednesday', start: '08:30', end: '10:30', group: '1', credits: '3.5' },
+      { uniId: 'technion', name: 'Data Structures 1', code: '234218', semester: 'Spring 2026', faculty: 'Computer Science', type: 'tutorial', lecturer: 'TA Sara', room: 'Taub 2', day: 'Thursday', start: '12:30', end: '14:30', group: '1', credits: '3.5' },
+      { uniId: 'technion', name: 'Algorithms 1', code: '234247', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Naor', room: 'Taub 4', day: 'Sunday', start: '14:30', end: '16:30', group: '1', credits: '4' },
+      { uniId: 'technion', name: 'Operating Systems', code: '234123', semester: 'Spring 2026', faculty: 'Computer Science', type: 'lecture', lecturer: 'Prof. Silberstein', room: 'Taub 3', day: 'Wednesday', start: '14:30', end: '16:30', group: '1', credits: '4' },
     ];
     seeds.forEach(s => {
-      this.db.courses.push({ id: `course_seed_${Math.random().toString(36).substr(2,8)}`, ...s, approvedAt: new Date().toISOString() });
+      this.db.courses.push({ id: `course_seed_${Math.random().toString(36).substr(2, 8)}`, ...s, approvedAt: new Date().toISOString() });
     });
     this.db._seeded = true;
     this.saveData();
@@ -109,8 +117,13 @@ class DataStore {
     return { success: true, user: newUser };
   }
 
-  getPublicCourses(uniId) {
-    return this.db.courses.filter(c => c.uniId === uniId);
+  getPublicCourses(uniId, semester = null) {
+    let courses = this.db.courses.filter(c => c.uniId === uniId);
+    if (semester) {
+      // For existing courses without semester, default to Spring 2026 for backward compatibility
+      courses = courses.filter(c => (c.semester || 'Spring 2026') === semester);
+    }
+    return courses;
   }
 
   getPersonalSchedule(userId) {
@@ -159,17 +172,17 @@ class DataStore {
   clearUserData(userId) {
     // 1. Clear schedule
     if (this.db.schedules) delete this.db.schedules[userId];
-    
+
     // 2. Clear to-dos
     if (this.db.todos) {
       this.db.todos = this.db.todos.filter(t => t.userId !== userId);
     }
-    
+
     // 3. Clear custom events
     if (this.db.customEvents) {
       this.db.customEvents = this.db.customEvents.filter(e => e.userId !== userId);
     }
-    
+
     // 4. Clear user progress (Semester Progress)
     if (this.db.userProgress) {
       Object.keys(this.db.userProgress).forEach(key => {
@@ -183,7 +196,7 @@ class DataStore {
     if (this.db.customProgressCourses) {
       delete this.db.customProgressCourses[userId];
     }
-    
+
     // 6. Clear custom course structures
     if (this.db.customCourseStructures) {
       Object.keys(this.db.customCourseStructures).forEach(key => {
@@ -211,7 +224,7 @@ class DataStore {
   }
 
   createCourse(courseData) {
-    const newCourse = { id: 'c_' + Date.now() + Math.random().toString(36).substr(2,5), ...courseData };
+    const newCourse = { id: 'c_' + Date.now() + Math.random().toString(36).substr(2, 5), ...courseData };
     this.db.courses.push(newCourse);
     this.saveData();
     return newCourse;
@@ -305,9 +318,13 @@ class DataStore {
     return newEvent;
   }
 
-  getCustomEvents(userId) {
+  getCustomEvents(userId, semester = null) {
     if (!this.db.customEvents) return [];
-    return this.db.customEvents.filter(e => e.userId === userId);
+    let events = this.db.customEvents.filter(e => e.userId === userId);
+    if (semester) {
+      events = events.filter(e => (e.semester || 'Spring 2026') === semester);
+    }
+    return events;
   }
 
   updateCustomEvent(eventId, eventData) {
@@ -434,14 +451,14 @@ class DataStore {
     if (!this.db.courseDetails[uniId]) this.db.courseDetails[uniId] = {};
     const existing = this.db.courseDetails[uniId][courseCode] || { feedbacks: [] };
     if (!existing.feedbacks) existing.feedbacks = [];
-    
+
     const existingIdx = existing.feedbacks.findIndex(f => f.userId === feedbackData.userId);
     if (existingIdx !== -1) {
       existing.feedbacks[existingIdx] = { ...existing.feedbacks[existingIdx], ...feedbackData, date: new Date().toISOString() };
     } else {
       existing.feedbacks.unshift({ ...feedbackData, date: new Date().toISOString() });
     }
-    
+
     this.db.courseDetails[uniId][courseCode] = existing;
     this.saveData();
   }
