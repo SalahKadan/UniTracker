@@ -821,7 +821,7 @@ function renderPublicCourses() {
 
   let html = '';
   Object.values(grouped).forEach(group => {
-    const courseColor = getCourseColorStr(group.code);
+    const courseColor = getResolvedCourseColor(group.code);
     html += `
       <div class="course-card" data-code="${group.code}" style="position:relative; --card-color: ${courseColor};">
         <style>
@@ -1329,6 +1329,23 @@ function getCourseColorStr(code) {
   return courseColors[Math.abs(hash) % courseColors.length];
 }
 
+// Resolve the actual displayed color for a course code,
+// checking user preferences (set via the edit modal) first,
+// then falling back to the hash-based default.
+function getResolvedCourseColor(code) {
+  const baseColor = getCourseColorStr(code);
+  if (!state.currentUser) return baseColor;
+  const allCourses = window.api.getPublicCourses(state.currentUniId, state.currentSemester);
+  const peers = allCourses.filter(c => c.code === code);
+  for (const p of peers) {
+    const pPref = window.api.getEventPreference(state.currentUser.id, p.id);
+    if (pPref && pPref.color) {
+      return pPref.color;
+    }
+  }
+  return baseColor;
+}
+
 function buildBlock(item, isCustom, isPreview = false, colIndex = 0, totalCols = 1) {
   const pref = window.api.getEventPreference(state.currentUser.id, item.id);
   const day = pref.day || item.day;
@@ -1609,7 +1626,7 @@ function handleSaveEdit() {
     }
   }
   document.getElementById('modal-edit').classList.add('hidden');
-  renderTimetable();
+  renderStudentDashboard();
 }
 
 function handleDeleteEvent() {
